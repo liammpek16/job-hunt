@@ -8,5 +8,8 @@
     "review": "node skills/reviewer/reviewer.js",
     "test": "node --test"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "docx": "^9.7.1"
+  }
 }

@@ -19,8 +19,17 @@ bullets are weak and how to fix them.
 node skills/reviewer/reviewer.js samples/sample-resume.md          # Markdown scorecard
 node skills/reviewer/reviewer.js samples/sample-resume.md --json   # structured JSON
 node skills/reviewer/reviewer.js --stdin < resume.md               # pipe in text
-node skills/reviewer/reviewer.js resume.md --out scorecard.md      # write to a file
+node skills/reviewer/reviewer.js resume.md --out scorecard.md      # write scorecard to a file
+node skills/reviewer/reviewer.js resume.md --docx improved.docx    # NEW .docx with improved bullets
 ```
+
+## `--docx` — generate an improved-resume Word file
+
+`--docx <out.docx>` writes a **new** Word document that reproduces the resume with each weak
+bullet replaced by its XYZ **rewrite scaffold** (full-XYZ bullets kept as-is). The scaffolds
+contain `[bracketed]` placeholders — fill in real numbers before sending. The original resume
+is **never modified**; this is a separate draft for your review. Rewrites are deterministic
+(no LLM), so they mark *what* to add rather than invent metrics.
 
 ## Output contract (the shared core)
 
