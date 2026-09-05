@@ -73,3 +73,22 @@ test('score never goes below 0 and verdict maps correctly', () => {
   assert.ok(scan.score >= 0);
   assert.ok(['high risk', 'moderate risk'].includes(scan.verdict));
 });
+
+// ---- ATS --docx (goal 4 addition) ----
+const { atsCleanBullet } = require('../lib/ats');
+const { writeResumeDocx } = require('../lib/docx');
+
+test('atsCleanBullet normalizes smart punctuation and strips HTML', () => {
+  assert.strictEqual(atsCleanBullet('Led “the” team — by <b>building</b> tools'), 'Led "the" team - by building tools');
+});
+
+test('ATS generates a valid ATS-safe .docx (new file)', async () => {
+  const fs = require('fs'); const os = require('os'); const path = require('path');
+  const resume = 'Jane\njane@x.com (555) 111-2222\n\nExperience\n- Built “stuff” — via <i>tools</i>\n| a | b |\n| - | - |';
+  const out = path.join(os.tmpdir(), `jh-ats-${Date.now()}.docx`);
+  await writeResumeDocx(resume, atsCleanBullet, out, 'ATS-safe draft');
+  const buf = fs.readFileSync(out);
+  assert.strictEqual(buf.slice(0, 2).toString('latin1'), 'PK');
+  assert.ok(buf.length > 1000);
+  fs.unlinkSync(out);
+});
