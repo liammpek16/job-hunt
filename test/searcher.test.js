@@ -94,3 +94,40 @@ test('store: setStatus rejects unknown status and unknown id', () => {
   assert.throws(() => store.setStatus(s, 'adzuna:1', 'ghosted'), /Unknown status/);
   assert.throws(() => store.setStatus(s, 'nope', 'applied'), /No role/);
 });
+
+// ---- LinkedIn source + auto-detection (goal 2 addition) ----
+const linkedin = require('../lib/sources/linkedin');
+const { resolveSource } = require('../skills/searcher/searcher');
+
+test('linkedin.credsPresent reflects the env key', () => {
+  assert.strictEqual(linkedin.credsPresent({}), false);
+  assert.strictEqual(linkedin.credsPresent({ LINKEDIN_JOBS_API_KEY: 'k' }), true);
+});
+
+test('resolveSource auto-detects: linkedin when key present, else adzuna; explicit wins', () => {
+  assert.strictEqual(resolveSource(null, {}).name, 'adzuna');
+  assert.strictEqual(resolveSource(null, { LINKEDIN_JOBS_API_KEY: 'k' }).name, 'linkedin');
+  assert.strictEqual(resolveSource('adzuna', { LINKEDIN_JOBS_API_KEY: 'k' }).name, 'adzuna', 'explicit --source overrides');
+});
+
+test('linkedin.fetchRoles normalizes varied provider fields + paginates', async () => {
+  const page1 = { data: Array.from({ length: 50 }, (_, i) => ({
+    job_title: 'SWE', company_name: `Co ${i}`, job_location: 'Remote', job_url: `https://li/${i}`,
+    job_description: 'x', posted_date: '2026-09-01',
+  })) };
+  const page2 = { data: [] };
+  const httpGetJson = async (url) => (/[?&]page=1\b/.test(url) ? page1 : page2);
+  const { roles } = await linkedin.fetchRoles({ title: 'SWE', location: 'Remote' }, 100,
+    { httpGetJson, env: { LINKEDIN_JOBS_API_KEY: 'k' } });
+  assert.strictEqual(roles.length, 50);
+  assert.strictEqual(roles[0].source, 'linkedin');
+  assert.strictEqual(roles[0].id.startsWith('linkedin:'), true);
+  assert.strictEqual(roles[0].company, 'Co 0');
+});
+
+test('linkedin requires a provider key (NO_CREDS, no network)', async () => {
+  await assert.rejects(
+    () => linkedin.fetchRoles({ title: 'SWE' }, 10, { env: {}, httpGetJson: async () => ({}) }),
+    (e) => e.code === 'NO_CREDS'
+  );
+});

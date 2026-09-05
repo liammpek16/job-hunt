@@ -16,6 +16,29 @@ LinkedIn/Indeed scraping hits anti-bot / ToS limits — the roadmap's flagged bi
 **Adzuna** (developer.adzuna.com) is a legal, free-tier aggregator across many boards with
 title/location/salary filters and pagination, so it reliably reaches >=100.
 
+## Sources & auto-detection (LinkedIn vs Adzuna)
+
+The searcher **auto-selects** its source (override with `--source`):
+
+- If a **LinkedIn-jobs provider key** is present (`LINKEDIN_JOBS_API_KEY`), it uses the
+  `linkedin` source.
+- Otherwise it uses **Adzuna**.
+
+**Honest caveat on LinkedIn:** LinkedIn has **no first-party public job-search API** for
+individuals — their Jobs/Talent APIs are partner-gated (employers/ATS vendors, approval
+required), and scraping LinkedIn breaks their ToS. So the `linkedin` source targets a
+**third-party LinkedIn-jobs provider** (e.g. a RapidAPI "LinkedIn Jobs Search" endpoint, or
+Proxycurl) that relicenses the data — you supply *that provider's* key:
+
+```bash
+export LINKEDIN_JOBS_API_KEY=your_provider_key
+export LINKEDIN_JOBS_API_HOST=linkedin-jobs-search.p.rapidapi.com   # or your provider's host
+# optional: export LINKEDIN_JOBS_API_URL=https://your-provider/endpoint
+```
+
+No LinkedIn key → the searcher just uses Adzuna. Either way the results normalize to the same
+shared shape and land in the same store.
+
 ## Setup (one time)
 
 Get a free key at **developer.adzuna.com** (gives an `app_id` + `app_key`), then:

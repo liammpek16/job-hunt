@@ -22,7 +22,7 @@ const store = require('../../lib/store');
 
 function parseArgs(argv) {
   const a = { title: '', location: '', salaryMin: null, salaryMax: null, country: 'us',
-    count: 100, source: 'adzuna', json: false, save: true };
+    count: 100, source: null, json: false, save: true }; // source null = auto-detect
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     const next = () => argv[++i];
@@ -50,6 +50,20 @@ function loadSource(name) {
   }
 }
 
+/**
+ * Decide which source to use. Explicit --source wins. Otherwise auto-detect: prefer
+ * LinkedIn when a LinkedIn-jobs provider key is present, else fall back to Adzuna.
+ * Returns { name, reason }.
+ */
+function resolveSource(explicit, env = process.env) {
+  if (explicit) return { name: explicit, reason: `--source ${explicit}` };
+  const linkedin = loadSource('linkedin');
+  if (linkedin.credsPresent(env)) {
+    return { name: 'linkedin', reason: 'LINKEDIN_JOBS_API_KEY present' };
+  }
+  return { name: 'adzuna', reason: 'no LinkedIn key — using Adzuna' };
+}
+
 function summarize(roles, target) {
   const withSalary = roles.filter((r) => r.salaryMin != null).length;
   const companies = new Set(roles.map((r) => r.company).filter(Boolean)).size;
@@ -62,7 +76,9 @@ async function main() {
     console.error('Provide at least --title. See --help in SKILL.md.');
     process.exit(2);
   }
-  const src = loadSource(args.source);
+  const chosen = resolveSource(args.source);
+  const src = loadSource(chosen.name);
+  console.error(`Source: ${chosen.name} (${chosen.reason})`);
   const params = { title: args.title, location: args.location, salaryMin: args.salaryMin,
     salaryMax: args.salaryMax, country: args.country };
 
@@ -102,4 +118,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { console.error(e.message); process.exit(1); });
-module.exports = { parseArgs, summarize, loadSource };
+module.exports = { parseArgs, summarize, loadSource, resolveSource };
