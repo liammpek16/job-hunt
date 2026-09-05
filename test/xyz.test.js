@@ -33,6 +33,14 @@ test('money and multiplier count as quantified Y', () => {
   assert.strictEqual(scoreBullet('Cut deploy time from 2 hours to 8 minutes by automating').hasY, true);
 });
 
+test('plain counts count as quantified Y (regression: real-resume validation)', () => {
+  // These were missed before widening the Y detector on a real resume.
+  assert.strictEqual(scoreBullet('Completed 5 proof of concepts per month by building custom models').hasY, true);
+  assert.strictEqual(scoreBullet('Created 18 different deflectors and tested each by following NFPA 13').hasY, true);
+  // Guard: a bare 4-digit year is still NOT a quantified result.
+  assert.strictEqual(scoreBullet('Worked in 2019 on the platform').hasY, false);
+});
+
 test('method detection: "using/via/leveraging" as well as "by …ing"', () => {
   assert.strictEqual(scoreBullet('Built a dashboard using React and D3').hasZ, true);
   assert.strictEqual(scoreBullet('Improved uptime via redundant failover').hasZ, true);
