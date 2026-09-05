@@ -9,6 +9,7 @@
     "search": "node skills/searcher/searcher.js",
     "customize": "node skills/customizer/customizer.js",
     "ats": "node skills/ats/ats.js",
+    "dashboard": "node skills/dashboard/dashboard.js",
     "test": "node --test"
   },
   "license": "UNLICENSED",
