@@ -21,10 +21,15 @@ Tailors a resume to **one job description (JD)**. It reuses the goal-1 XYZ score
 node skills/customizer/customizer.js --resume resume.md --jd job.txt
 node skills/customizer/customizer.js --resume resume.md --role "adzuna:12345"   # JD from the store
 node skills/customizer/customizer.js --resume resume.md --jd job.txt --json      # structured
+node skills/customizer/customizer.js --resume resume.md --jd job.txt --docx tailored.docx
 ```
 
 `--role` pulls the JD from a saved role in `data/jobs.json` (from the searcher), so the whole
 pipeline — search → tailor — shares one store.
+
+`--docx <out.docx>` writes a **new** tailored-resume Word file: weak bullets replaced by their
+XYZ rewrite, and a header note listing the JD keywords to weave in (truthfully). The original
+resume is never modified.
 
 ## Output contract
 
