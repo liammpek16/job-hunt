@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "review": "node skills/reviewer/reviewer.js",
+    "search": "node skills/searcher/searcher.js",
     "test": "node --test"
   },
   "license": "UNLICENSED",
