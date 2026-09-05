@@ -8,6 +8,7 @@
     "review": "node skills/reviewer/reviewer.js",
     "search": "node skills/searcher/searcher.js",
     "customize": "node skills/customizer/customizer.js",
+    "ats": "node skills/ats/ats.js",
     "test": "node --test"
   },
   "license": "UNLICENSED",
