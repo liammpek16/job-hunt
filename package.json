@@ -1,0 +1,12 @@
+{
+  "name": "job-hunt",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Job Hunt / Recruiter Helper — resume review, job search, tailoring, ATS scan, dashboard.",
+  "type": "commonjs",
+  "scripts": {
+    "review": "node skills/reviewer/reviewer.js",
+    "test": "node --test"
+  },
+  "license": "UNLICENSED"
+}
