@@ -14,7 +14,7 @@
  *   node skills/dashboard/dashboard.js --apply <id>          # mark a role applied
  *   node skills/dashboard/dashboard.js --status <id> <status># set status (saved..rejected)
  *   node skills/dashboard/dashboard.js --interview <id> [--kind "phone screen"] [--notes "..."]
- *   node skills/dashboard/dashboard.js --serve [--port 4174]   # live server for the HUD button
+ *   node skills/dashboard/dashboard.js --serve [--port 4188]   # live server for the HUD button
  */
 const fs = require('fs');
 const path = require('path');
@@ -22,7 +22,7 @@ const http = require('http');
 const store = require('../../lib/store');
 const { aggregate, renderHtml, renderTerminal } = require('../../lib/dashboard');
 
-const DEFAULT_PORT = 4174;
+const DEFAULT_PORT = 4188;
 
 function parseArgs(argv) {
   const a = { out: null, json: false, apply: null, status: null, statusVal: null,

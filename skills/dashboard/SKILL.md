@@ -31,8 +31,8 @@ Statuses: `saved → applied → interviewing → offer → rejected`. `--apply`
 ## Serve (for the Admin Brain HUD button)
 
 ```bash
-node skills/dashboard/dashboard.js --serve [--port 4174]   # live server, 127.0.0.1
-.\run-dashboard.ps1 [-Port 4174]                            # PowerShell wrapper
+node skills/dashboard/dashboard.js --serve [--port 4188]   # live server, 127.0.0.1
+.\run-dashboard.ps1 [-Port 4188]                            # PowerShell wrapper
 ```
 
 `--serve` starts a tiny zero-dependency server that renders the **live** dashboard from the
@@ -41,7 +41,7 @@ store on every request (bound to `127.0.0.1`). This is what the Admin Brain HUD'
 Job Hunt project note in the vault:
 
 ```yaml
-webapp_url: "http://127.0.0.1:4174"
+webapp_url: "http://127.0.0.1:4188"
 webapp_cmd: "powershell -NoProfile -ExecutionPolicy Bypass -File run-dashboard.ps1"
 webapp_cwd: "C:/Users/liamm/job-hunt"
 ```

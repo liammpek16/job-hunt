@@ -10,13 +10,13 @@
 
 .EXAMPLE
     .\run-dashboard.ps1
-    Serve on the default port 4174.
+    Serve on the default port 4188.
 
 .EXAMPLE
     .\run-dashboard.ps1 -Port 4200
 #>
 param(
-    [int]$Port = 4174
+    [int]$Port = 4188
 )
 
 Set-Location $PSScriptRoot
