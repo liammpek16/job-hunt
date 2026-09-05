@@ -28,6 +28,27 @@ node skills/dashboard/dashboard.js --interview "adzuna:12345" --kind "phone scre
 Statuses: `saved → applied → interviewing → offer → rejected`. `--apply` is a shortcut for
 `--status <id> applied`. Any tracking command re-renders after saving.
 
+## Serve (for the Admin Brain HUD button)
+
+```bash
+node skills/dashboard/dashboard.js --serve [--port 4188]   # live server, 127.0.0.1
+.\run-dashboard.ps1 [-Port 4188]                            # PowerShell wrapper
+```
+
+`--serve` starts a tiny zero-dependency server that renders the **live** dashboard from the
+store on every request (bound to `127.0.0.1`). This is what the Admin Brain HUD's per-project
+**webapp button** launches — exactly like the Dota Coach webapp. Wire it up by adding to the
+Job Hunt project note in the vault:
+
+```yaml
+webapp_url: "http://127.0.0.1:4188"
+webapp_cmd: "powershell -NoProfile -ExecutionPolicy Bypass -File run-dashboard.ps1"
+webapp_cwd: "C:/Users/liamm/job-hunt"
+```
+
+Then the HUD button probes the URL, launches `run-dashboard.ps1` if it's down, and opens the
+dashboard — no HUD code change. `GET /health` returns `ok` for liveness checks.
+
 ## What it shows
 
 - **Stat tiles** — Applied, Interviewing, Interviews logged, Offers, Saved.

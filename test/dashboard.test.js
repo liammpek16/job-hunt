@@ -62,3 +62,23 @@ test('terminal summary reports the funnel', () => {
   assert.match(out, /Applied 3/);
   assert.match(out, /Interviews logged: 1/);
 });
+
+// ---- --serve / HUD-launch server (link-dashboard-to-hud) ----
+test('createServer serves the live dashboard HTML and a /health check', async () => {
+  const { createServer } = require('../skills/dashboard/dashboard');
+  const server = createServer();
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`);
+    assert.strictEqual(res.status, 200);
+    assert.match(res.headers.get('content-type') || '', /text\/html/);
+    const html = await res.text();
+    assert.match(html, /Job Hunt Dashboard/);
+    const health = await fetch(`http://127.0.0.1:${port}/health`);
+    assert.strictEqual(health.status, 200);
+    assert.strictEqual((await health.text()), 'ok');
+  } finally {
+    await new Promise((r) => server.close(r));
+  }
+});
