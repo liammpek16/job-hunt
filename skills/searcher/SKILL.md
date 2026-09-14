@@ -16,13 +16,31 @@ LinkedIn/Indeed scraping hits anti-bot / ToS limits — the roadmap's flagged bi
 **Adzuna** (developer.adzuna.com) is a legal, free-tier aggregator across many boards with
 title/location/salary filters and pagination, so it reliably reaches >=100.
 
-## Sources & auto-detection (LinkedIn vs Adzuna)
+## Sources & auto-detection (Claude subscription vs Adzuna vs LinkedIn)
 
 The searcher **auto-selects** its source (override with `--source`):
 
 - If a **LinkedIn-jobs provider key** is present (`LINKEDIN_JOBS_API_KEY`), it uses the
   `linkedin` source.
-- Otherwise it uses **Adzuna**.
+- Else if an **Adzuna key** is present (`ADZUNA_APP_ID` + `ADZUNA_APP_KEY`), it uses `adzuna`.
+- **Otherwise** — no API key at all — it uses the **`claude` source**, which runs the search on
+  your **Claude Code subscription** with **no API key and no metered credits**.
+
+### `claude` source (no API key, runs on the subscription)
+
+Mirrors Admin Brain's "$0 harness hands the reasoning to Claude Code" pattern via a two-phase
+**file handoff** (no network, no key, no deps):
+
+1. **First run** (`--source claude`, or just no key set): writes a request spec
+   `data/claude-search-<slug>.request.json`, prints the exact search prompt for Claude Code, and
+   exits **code 4** (handoff pending).
+2. **Claude Code** performs the web search on the subscription and writes the roles it found to
+   `data/claude-search-<slug>.results.json` — a JSON array (or `{ "roles": [...] }`) of
+   `{ title, company, location, salaryMin, salaryMax, url, description, created }`.
+3. **Re-run the same command**: the source reads, validates, normalizes (`source:"claude"`) and
+   dedupes that file into the shared store — the same records the customizer / ATS / dashboard read.
+
+Exit codes: `1` = under target, `3` = missing credentials (keyed sources), **`4` = Claude handoff pending**.
 
 **Honest caveat on LinkedIn:** LinkedIn has **no first-party public job-search API** for
 individuals — their Jobs/Talent APIs are partner-gated (employers/ATS vendors, approval

@@ -104,8 +104,9 @@ test('linkedin.credsPresent reflects the env key', () => {
   assert.strictEqual(linkedin.credsPresent({ LINKEDIN_JOBS_API_KEY: 'k' }), true);
 });
 
-test('resolveSource auto-detects: linkedin when key present, else adzuna; explicit wins', () => {
-  assert.strictEqual(resolveSource(null, {}).name, 'adzuna');
+test('resolveSource auto-detects: linkedin > adzuna > claude (no key); explicit wins', () => {
+  assert.strictEqual(resolveSource(null, {}).name, 'claude', 'no API key → Claude Code subscription source');
+  assert.strictEqual(resolveSource(null, { ADZUNA_APP_ID: 'a', ADZUNA_APP_KEY: 'b' }).name, 'adzuna');
   assert.strictEqual(resolveSource(null, { LINKEDIN_JOBS_API_KEY: 'k' }).name, 'linkedin');
   assert.strictEqual(resolveSource('adzuna', { LINKEDIN_JOBS_API_KEY: 'k' }).name, 'adzuna', 'explicit --source overrides');
 });

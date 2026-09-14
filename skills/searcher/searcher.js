@@ -52,7 +52,8 @@ function loadSource(name) {
 
 /**
  * Decide which source to use. Explicit --source wins. Otherwise auto-detect: prefer
- * LinkedIn when a LinkedIn-jobs provider key is present, else fall back to Adzuna.
+ * LinkedIn when a LinkedIn-jobs provider key is present, else Adzuna when its key is
+ * present, else the Claude Code subscription source (no API key / no credits).
  * Returns { name, reason }.
  */
 function resolveSource(explicit, env = process.env) {
@@ -61,7 +62,10 @@ function resolveSource(explicit, env = process.env) {
   if (linkedin.credsPresent(env)) {
     return { name: 'linkedin', reason: 'LINKEDIN_JOBS_API_KEY present' };
   }
-  return { name: 'adzuna', reason: 'no LinkedIn key — using Adzuna' };
+  if (env.ADZUNA_APP_ID && env.ADZUNA_APP_KEY) {
+    return { name: 'adzuna', reason: 'Adzuna key present' };
+  }
+  return { name: 'claude', reason: 'no API key — using the Claude Code subscription (no credits)' };
 }
 
 function summarize(roles, target) {
@@ -89,6 +93,14 @@ async function main() {
     if (e.code === 'NO_CREDS') {
       console.error(e.message);
       process.exit(3);
+    }
+    if (e.code === 'HANDOFF_PENDING') {
+      // The Claude source needs Claude Code to run the search on the subscription and
+      // drop a results file. Print the prompt, then exit with the distinct handoff code.
+      console.error('⤳ Claude Code search handoff (no API key / no credits):\n');
+      console.error(e.prompt);
+      console.error(`\nAfter the results file exists, re-run the same command to ingest it.`);
+      process.exit(4);
     }
     throw e;
   }
