@@ -15,10 +15,11 @@ const fs = require('fs');
 const path = require('path');
 const { scanResume, formatScan, atsCleanBullet } = require('../../lib/ats');
 const { writeResumeDocx } = require('../../lib/docx');
+const { writeResumePdf } = require('../../lib/pdf');
 const store = require('../../lib/store');
 
 function parseArgs(argv) {
-  const a = { resume: null, jd: null, role: null, json: false, out: null, docx: null };
+  const a = { resume: null, jd: null, role: null, json: false, out: null, docx: null, pdf: null };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (k === '--resume') a.resume = argv[++i];
@@ -27,6 +28,7 @@ function parseArgs(argv) {
     else if (k === '--json') a.json = true;
     else if (k === '--out') a.out = argv[++i];
     else if (k === '--docx') a.docx = argv[++i];
+    else if (k === '--pdf') a.pdf = argv[++i];
   }
   return a;
 }
@@ -50,17 +52,21 @@ async function main() {
   const scan = scanResume(resumeText, { jdText });
   const out = args.json ? JSON.stringify(scan, null, 2) : formatScan(scan);
   if (args.out) { fs.writeFileSync(path.resolve(args.out), out); console.error(`Wrote scan to ${args.out}`); }
-  else if (!args.docx) process.stdout.write(out + '\n');
+  else if (!args.docx && !args.pdf) process.stdout.write(out + '\n');
 
+  // The rebuild is itself the structural ATS fix (no pipe-tables, images or HTML survive);
+  // bullets are additionally ASCII-normalized. Header lists the risks to address.
+  const topFixes = scan.findings.slice(0, 6).map((f) => `${f.code} (${f.severity})`).join(', ');
+  const note = `ATS-safe draft — risk was ${scan.verdict} (${scan.score}/100). Fixes applied: `
+    + 'clean structure (no tables/images/HTML), ASCII punctuation, Word bullets. '
+    + `Still address: ${topFixes || 'none'}. Add missing keywords truthfully. Review before sending.`;
   if (args.docx) {
-    // The .docx rebuild is itself the structural ATS fix (no pipe-tables, images or HTML
-    // survive); bullets are additionally ASCII-normalized. Header lists the risks to address.
-    const topFixes = scan.findings.slice(0, 6).map((f) => `${f.code} (${f.severity})`).join(', ');
-    const note = `ATS-safe draft — risk was ${scan.verdict} (${scan.score}/100). Fixes applied: `
-      + 'clean structure (no tables/images/HTML), ASCII punctuation, Word bullets. '
-      + `Still address: ${topFixes || 'none'}. Add missing keywords truthfully. Review before sending.`;
     const written = await writeResumeDocx(resumeText, atsCleanBullet, args.docx, note);
     console.error(`Wrote ATS-safe .docx to ${path.relative(process.cwd(), written)}`);
+  }
+  if (args.pdf) {
+    const written = await writeResumePdf(resumeText, atsCleanBullet, args.pdf, note);
+    console.error(`Wrote ATS-safe .pdf to ${path.relative(process.cwd(), written)}`);
   }
   // Exit 1 on high risk so the pipeline can gate on it.
   if (scan.verdict === 'high risk') process.exit(1);
