@@ -34,17 +34,29 @@ test('GET /health returns ok', async () => {
   } finally { await s.close(); }
 });
 
-test('GET /api/roles returns a relevance-sorted array', async () => {
+test('GET /api/roles returns a relevance-sorted array with a pdf flag', async () => {
   const s = await boot();
   try {
     const r = await fetch(s.base + '/api/roles');
     assert.strictEqual(r.status, 200);
     const { roles } = await r.json();
     assert.ok(Array.isArray(roles));
-    for (const role of roles) assert.strictEqual(typeof role.relevance, 'number');
+    for (const role of roles) {
+      assert.strictEqual(typeof role.relevance, 'number');
+      assert.strictEqual(typeof role.pdf, 'boolean', 'each role reports whether a tailored PDF exists');
+    }
     for (let i = 1; i < roles.length; i++) {
       assert.ok(roles[i - 1].relevance >= roles[i].relevance, 'sorted high→low');
     }
+  } finally { await s.close(); }
+});
+
+test('GET /api/tailored/pdf for an unknown id is 404 JSON', async () => {
+  const s = await boot();
+  try {
+    const r = await fetch(s.base + '/api/tailored/pdf?id=__does_not_exist__');
+    assert.strictEqual(r.status, 404);
+    assert.ok((await r.json()).error);
   } finally { await s.close(); }
 });
 

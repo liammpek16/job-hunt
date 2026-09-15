@@ -29,8 +29,16 @@ const { aggregate, renderHtml, renderTerminal } = require('../../lib/dashboard')
 const { rankRoles } = require('../../lib/relevance');
 const tailored = require('../../lib/tailored');
 const { tailorResume, formatTailorReport } = require('../../lib/tailor');
+const { writeResumePdf } = require('../../lib/pdf');
+const { scoreBullet } = require('../../lib/xyz');
 const { renderApp } = require('../../lib/webapp');
 const claudeSource = require('../../lib/sources/claude');
+
+/** Same per-bullet transform the customizer uses: replace weak bullets with their XYZ rewrite. */
+function improveBullet(text) {
+  const b = scoreBullet(text);
+  return b.score === 3 ? text : (b.rewrite || text);
+}
 
 const DEFAULT_PORT = 4188;
 const REPO_ROOT = path.join(__dirname, '..', '..');
@@ -80,6 +88,7 @@ function rolesPayload(s = store.load()) {
       salaryMin: r.salaryMin ?? null, salaryMax: r.salaryMax ?? null,
       url: r.url || '', relevance: r.relevance,
       status: app.status || 'saved', tailored: isTailored, coverage,
+      pdf: isTailored && tailored.hasPdf(r.id),
     };
   });
 }
@@ -109,8 +118,13 @@ function runSearch(body = {}) {
   });
 }
 
-/** Tailor the resume to one role's JD, persist the report, return a summary. */
-function refineRole(id) {
+/**
+ * Tailor the resume to one role's JD: persist the Markdown report AND generate a NEW
+ * tailored-resume .pdf (weak bullets → XYZ rewrites, ATS-safe/accent-stripped), so the row
+ * can preview it. Async because the PDF writer streams to disk. The original resume is
+ * never modified.
+ */
+async function refineRole(id) {
   const s = store.load();
   const role = (s.roles || {})[id];
   if (!role) { const e = new Error(`No role "${id}" in the store.`); e.status = 404; throw e; }
@@ -130,7 +144,22 @@ function refineRole(id) {
     weak: report.weakBullets.length,
   };
   tailored.save(id, markdown, summary);
-  return { id, ...summary };
+
+  // Generate the tailored-resume PDF alongside the report (same transform + note as the
+  // customizer's --pdf), so the "Preview PDF" button has a real, ATS-safe file to show.
+  const missing = report.coverage.missing.map((k) => k.term).slice(0, 15).join(', ');
+  const note = `Tailored for ${jdLabel}. Weave these missing JD keywords in where truthful: `
+    + `${missing || '(none — good coverage)'}. Weak bullets carry XYZ rewrite scaffolds — `
+    + 'fill the [bracketed] placeholders. Original resume unchanged; review before sending.';
+  let pdf = false;
+  try {
+    await writeResumePdf(resumeText, improveBullet, tailored.pdfPath(id), note);
+    pdf = true;
+  } catch (e) {
+    // A PDF failure must not fail the refine — the Markdown report is the primary artifact.
+    console.error(`PDF generation failed for ${id}: ${e.message}`);
+  }
+  return { id, ...summary, pdf };
 }
 
 /* --------------------------------- server ----------------------------------- */
@@ -181,6 +210,18 @@ function createServer() {
         if (!rec) { sendJson(res, 404, { error: 'No tailored résumé for that role yet.' }); return; }
         sendJson(res, 200, { id, markdown: rec.markdown, meta: rec.meta }); return;
       }
+      if (req.method === 'GET' && p === '/api/tailored/pdf') {
+        const id = url.searchParams.get('id') || '';
+        const file = tailored.pdfPath(id);
+        if (!id || !tailored.hasPdf(id)) { sendJson(res, 404, { error: 'No tailored résumé PDF for that role yet.' }); return; }
+        const inline = url.searchParams.get('download') ? 'attachment' : 'inline';
+        res.writeHead(200, {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `${inline}; filename="tailored-resume.pdf"`,
+        });
+        fs.createReadStream(file).pipe(res);
+        return;
+      }
       if (req.method === 'POST' && p === '/api/search') {
         const body = await readBody(req);
         const out = await runSearch(body);
@@ -188,7 +229,7 @@ function createServer() {
       }
       if (req.method === 'POST' && p === '/api/tailor') {
         const body = await readBody(req);
-        const out = refineRole(String(body.id || ''));
+        const out = await refineRole(String(body.id || ''));
         sendJson(res, 200, out); return;
       }
       sendJson(res, 404, { error: 'Not found' });
