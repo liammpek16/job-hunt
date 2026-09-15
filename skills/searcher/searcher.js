@@ -22,7 +22,7 @@ const store = require('../../lib/store');
 
 function parseArgs(argv) {
   const a = { title: '', location: '', salaryMin: null, salaryMax: null, country: 'us',
-    count: 100, source: null, json: false, save: true }; // source null = auto-detect
+    count: 100, source: null, json: false, save: true, sinceDays: 7 }; // source null = auto-detect
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     const next = () => argv[++i];
@@ -34,6 +34,7 @@ function parseArgs(argv) {
       case '--country': a.country = next(); break;
       case '--count': a.count = Number(next()); break;
       case '--source': a.source = next(); break;
+      case '--since-days': a.sinceDays = Number(next()); break;
       case '--json': a.json = true; break;
       case '--no-save': a.save = false; break;
       default: break;
@@ -84,7 +85,7 @@ async function main() {
   const src = loadSource(chosen.name);
   console.error(`Source: ${chosen.name} (${chosen.reason})`);
   const params = { title: args.title, location: args.location, salaryMin: args.salaryMin,
-    salaryMax: args.salaryMax, country: args.country };
+    salaryMax: args.salaryMax, country: args.country, sinceDays: args.sinceDays };
 
   let result;
   try {
@@ -106,12 +107,20 @@ async function main() {
   }
 
   const summary = summarize(result.roles, args.count);
+  summary.sinceDays = result.sinceDays ?? args.sinceDays;
+  if (result.recent != null) { summary.recent = result.recent; summary.stale = result.stale; }
   if (args.save) {
     const s = store.load();
     const { added, skipped } = store.addRoles(s, result.roles);
     store.save(s);
     summary.savedNew = added;
     summary.savedSkipped = skipped;
+    // Consume the Claude results file so a re-run searches afresh (not re-ingest the same file).
+    if (chosen.name === 'claude') src.archiveResults(params);
+    if (added === 0) {
+      console.error(`No new job postings in the last ${summary.sinceDays} days for these criteria — `
+        + 'expand your search (broaden the title/location or lower the minimum salary) and try again.');
+    }
   }
 
   if (args.json) {

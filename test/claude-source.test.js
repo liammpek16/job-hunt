@@ -10,6 +10,11 @@ function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'claude-src-'));
 }
 
+/** ISO date `n` days ago (default: today) — for building "recent" fixtures. */
+function daysAgoIso(n = 0) {
+  return new Date(Date.now() - n * 24 * 3600 * 1000).toISOString();
+}
+
 test('credsPresent is always true — no API key needed (runs on the subscription)', () => {
   assert.strictEqual(claude.credsPresent(), true);
   assert.strictEqual(claude.credsPresent({}), true);
@@ -41,8 +46,8 @@ test('phase 2: ingests a results array, normalizing to the shared shape (source=
   const results = claude.resultsPath(params, { dataDir: dir });
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(results, JSON.stringify([
-    { title: 'Sales Engineer', company: 'Acme', location: 'New York, NY', salaryMin: 130000, url: 'https://acme.example/1', description: 'Sell.' },
-    { title: 'Senior Sales Engineer', company: 'Globex', location: 'NYC', salary_min: '150000', url: 'https://globex.example/2' },
+    { title: 'Sales Engineer', company: 'Acme', location: 'New York, NY', salaryMin: 130000, url: 'https://acme.example/1', description: 'Sell.', created: daysAgoIso(1) },
+    { title: 'Senior Sales Engineer', company: 'Globex', location: 'NYC', salary_min: '150000', url: 'https://globex.example/2', created: daysAgoIso(2) },
   ]));
   const { roles, pages, total } = await claude.fetchRoles(params, 100, { dataDir: dir });
   assert.strictEqual(pages, 1);
@@ -58,7 +63,7 @@ test('phase 2: also accepts { roles: [...] } wrapper', async () => {
   const params = { title: 'X', location: 'Y' };
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(claude.resultsPath(params, { dataDir: dir }),
-    JSON.stringify({ roles: [{ title: 'X', company: 'C', url: 'https://c.example/x' }] }));
+    JSON.stringify({ roles: [{ title: 'X', company: 'C', url: 'https://c.example/x', created: daysAgoIso(1) }] }));
   const { roles } = await claude.fetchRoles(params, 100, { dataDir: dir });
   assert.strictEqual(roles.length, 1);
 });
@@ -68,9 +73,9 @@ test('dedupes by id and drops title-less junk', async () => {
   const params = { title: 'X', location: 'Y' };
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(claude.resultsPath(params, { dataDir: dir }), JSON.stringify([
-    { title: 'Dup', company: 'C', url: 'https://c.example/dup' },
-    { title: 'Dup', company: 'C', url: 'https://c.example/dup' }, // same url → same id
-    { company: 'NoTitle', url: 'https://c.example/none' },        // no title → dropped
+    { title: 'Dup', company: 'C', url: 'https://c.example/dup', created: daysAgoIso(1) },
+    { title: 'Dup', company: 'C', url: 'https://c.example/dup', created: daysAgoIso(1) }, // same url → same id
+    { company: 'NoTitle', url: 'https://c.example/none', created: daysAgoIso(1) },        // no title → dropped
   ]));
   const { roles } = await claude.fetchRoles(params, 100, { dataDir: dir });
   assert.strictEqual(roles.length, 1);
@@ -131,10 +136,10 @@ test('fetchRoles ingests only roles with a valid posting URL', async () => {
   const params = { title: 'X', location: 'Y' };
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(claude.resultsPath(params, { dataDir: dir }), JSON.stringify([
-    { title: 'Real Role', company: 'Acme', url: 'https://acme.example/1' },   // kept
-    { title: 'No Link', company: 'Ghost Co' },                                 // dropped: no url
-    { title: 'Bad Link', company: 'Ghost Co', url: 'javascript:alert(1)' },    // dropped: not http(s)
-    { title: 'Relative', company: 'Ghost Co', url: '/careers/42' },            // dropped: relative
+    { title: 'Real Role', company: 'Acme', url: 'https://acme.example/1', created: daysAgoIso(1) }, // kept
+    { title: 'No Link', company: 'Ghost Co', created: daysAgoIso(1) },                              // dropped: no url
+    { title: 'Bad Link', company: 'Ghost Co', url: 'javascript:alert(1)', created: daysAgoIso(1) },// dropped: not http(s)
+    { title: 'Relative', company: 'Ghost Co', url: '/careers/42', created: daysAgoIso(1) },        // dropped: relative
   ]));
   const { roles, total } = await claude.fetchRoles(params, 100, { dataDir: dir });
   assert.strictEqual(roles.length, 1, 'only the one real, linked role survives');
@@ -145,4 +150,68 @@ test('fetchRoles ingests only roles with a valid posting URL', async () => {
 test('buildPrompt tells Claude every role needs a real posting URL', () => {
   const prompt = claude.buildPrompt({ title: 'X', location: 'Y' }, 100, { request: 'req', results: 'res' });
   assert.match(prompt, /valid posting URL|working[\s\S]*http/i);
+});
+
+/* --- recency window: surface last-week postings, else flag "expand criteria" --- */
+
+test('withinDays accepts recent ISO dates, rejects old/invalid/future', () => {
+  assert.ok(claude.withinDays(daysAgoIso(1), 7));
+  assert.ok(claude.withinDays(daysAgoIso(6), 7));
+  assert.ok(!claude.withinDays(daysAgoIso(30), 7), 'a month old is stale');
+  assert.ok(!claude.withinDays(null, 7));
+  assert.ok(!claude.withinDays('not a date', 7));
+  assert.ok(!claude.withinDays(daysAgoIso(-5), 7), 'implausible future date rejected');
+});
+
+test('fetchRoles keeps only postings within the recency window and reports the split', async () => {
+  const dir = tmpDir();
+  const params = { title: 'X', location: 'Y' };
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(claude.resultsPath(params, { dataDir: dir }), JSON.stringify([
+    { title: 'Fresh', company: 'A', url: 'https://a.example/1', created: daysAgoIso(2) },  // recent
+    { title: 'Old',   company: 'B', url: 'https://b.example/2', created: daysAgoIso(40) }, // stale
+    { title: 'Undated', company: 'C', url: 'https://c.example/3' },                        // no date → stale
+  ]));
+  const res = await claude.fetchRoles(params, 100, { dataDir: dir, sinceDays: 7 });
+  assert.strictEqual(res.total, 3, 'all distinct roles counted');
+  assert.strictEqual(res.recent, 1);
+  assert.strictEqual(res.stale, 2);
+  assert.strictEqual(res.sinceDays, 7);
+  assert.deepStrictEqual(res.roles.map((r) => r.title), ['Fresh']);
+});
+
+test('fetchRoles returns zero recent when everything is old (drives the "expand criteria" path)', async () => {
+  const dir = tmpDir();
+  const params = { title: 'X', location: 'Y' };
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(claude.resultsPath(params, { dataDir: dir }), JSON.stringify([
+    { title: 'Old', company: 'B', url: 'https://b.example/2', created: daysAgoIso(40) },
+  ]));
+  const res = await claude.fetchRoles(params, 100, { dataDir: dir, sinceDays: 7 });
+  assert.strictEqual(res.roles.length, 0);
+  assert.strictEqual(res.recent, 0);
+  assert.strictEqual(res.total, 1);
+});
+
+test('archiveResults renames the results file so the next run re-searches (fresh handoff)', async () => {
+  const dir = tmpDir();
+  const params = { title: 'X', location: 'Y' };
+  fs.mkdirSync(dir, { recursive: true });
+  const results = claude.resultsPath(params, { dataDir: dir });
+  fs.writeFileSync(results, JSON.stringify([{ title: 'Fresh', url: 'https://a.example/1', created: daysAgoIso(1) }]));
+  // consume it
+  const dest = claude.archiveResults(params, { dataDir: dir });
+  assert.ok(dest && fs.existsSync(dest), 'archived aside');
+  assert.ok(!fs.existsSync(results), 'original results file gone');
+  // with no results file, the next fetch re-enters the handoff (fresh search)
+  await assert.rejects(() => claude.fetchRoles(params, 100, { dataDir: dir }),
+    (e) => e.code === 'HANDOFF_PENDING');
+  // archiving when there is nothing to consume is a no-op (null)
+  assert.strictEqual(claude.archiveResults(params, { dataDir: dir }), null);
+});
+
+test('buildPrompt states the recency window and asks for created dates', () => {
+  const prompt = claude.buildPrompt({ title: 'X', location: 'Y', sinceDays: 7 }, 100, { request: 'r', results: 's' });
+  assert.match(prompt, /last 7 days/i);
+  assert.match(prompt, /created/i);
 });
