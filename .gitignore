@@ -1,4 +1,6 @@
 node_modules/
 data/jobs.json
+data/tailored/
+data/claude-search-*.json
 dashboard.html
 *.log
