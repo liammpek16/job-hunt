@@ -99,3 +99,50 @@ test('resolveSource auto-selects claude when no API key is present', () => {
   assert.strictEqual(resolveSource(null, { LINKEDIN_JOBS_API_KEY: 'k' }).name, 'linkedin');
   assert.strictEqual(resolveSource('adzuna', {}).name, 'adzuna', 'explicit --source wins');
 });
+
+/* --- URL gate: stop surfacing "non-existent jobs" (no valid posting link) --- */
+
+test('validPostingUrl accepts absolute http(s) URLs with a real host', () => {
+  assert.ok(claude.validPostingUrl('https://boards.greenhouse.io/x/1'));
+  assert.ok(claude.validPostingUrl('http://jobs.lever.co/y/2'));
+  assert.strictEqual(claude.validPostingUrl(' https://acme.example/1 '), 'https://acme.example/1', 'trims');
+});
+
+test('validPostingUrl rejects missing/relative/non-http/hostless URLs', () => {
+  assert.strictEqual(claude.validPostingUrl(''), null);
+  assert.strictEqual(claude.validPostingUrl(null), null);
+  assert.strictEqual(claude.validPostingUrl('/jobs/123'), null, 'relative path');
+  assert.strictEqual(claude.validPostingUrl('acme.com/jobs'), null, 'no scheme');
+  assert.strictEqual(claude.validPostingUrl('ftp://acme.example/1'), null, 'non-http scheme');
+  assert.strictEqual(claude.validPostingUrl('mailto:a@b.com'), null);
+  assert.strictEqual(claude.validPostingUrl('http://localhost/x'), null, 'bare host, not a real posting');
+  assert.strictEqual(claude.validPostingUrl('not a url'), null);
+});
+
+test('normalize drops a role with no valid posting URL (a non-existent job)', () => {
+  assert.strictEqual(claude.normalize({ title: 'Sales Engineer', company: 'Acme' }), null, 'no url');
+  assert.strictEqual(claude.normalize({ title: 'Sales Engineer', url: '/relative' }), null, 'invalid url');
+  const ok = claude.normalize({ title: 'Sales Engineer', company: 'Acme', url: 'https://acme.example/1' });
+  assert.ok(ok && ok.url === 'https://acme.example/1');
+});
+
+test('fetchRoles ingests only roles with a valid posting URL', async () => {
+  const dir = tmpDir();
+  const params = { title: 'X', location: 'Y' };
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(claude.resultsPath(params, { dataDir: dir }), JSON.stringify([
+    { title: 'Real Role', company: 'Acme', url: 'https://acme.example/1' },   // kept
+    { title: 'No Link', company: 'Ghost Co' },                                 // dropped: no url
+    { title: 'Bad Link', company: 'Ghost Co', url: 'javascript:alert(1)' },    // dropped: not http(s)
+    { title: 'Relative', company: 'Ghost Co', url: '/careers/42' },            // dropped: relative
+  ]));
+  const { roles, total } = await claude.fetchRoles(params, 100, { dataDir: dir });
+  assert.strictEqual(roles.length, 1, 'only the one real, linked role survives');
+  assert.strictEqual(total, 1);
+  assert.strictEqual(roles[0].title, 'Real Role');
+});
+
+test('buildPrompt tells Claude every role needs a real posting URL', () => {
+  const prompt = claude.buildPrompt({ title: 'X', location: 'Y' }, 100, { request: 'req', results: 'res' });
+  assert.match(prompt, /valid posting URL|working[\s\S]*http/i);
+});

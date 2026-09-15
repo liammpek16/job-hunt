@@ -49,3 +49,14 @@ test('refinedIds on a missing dir is an empty set (no throw)', () => {
   const set = tailored.refinedIds({ dir: path.join(os.tmpdir(), 'does-not-exist-'+Date.now()) });
   assert.strictEqual(set.size, 0);
 });
+
+test('pdfPath is dir-safe and hasPdf reflects a written .pdf', () => {
+  const dir = tmpDir();
+  const id = 'claude:https://boards.greenhouse.io/x/1';
+  const pdf = tailored.pdfPath(id, { dir });
+  assert.ok(pdf.endsWith('.pdf'));
+  assert.ok(!/[:]/.test(path.basename(pdf)), 'colon sanitized out of the filename');
+  assert.strictEqual(tailored.hasPdf(id, { dir }), false);
+  fs.writeFileSync(pdf, '%PDF-1.4\n');
+  assert.strictEqual(tailored.hasPdf(id, { dir }), true);
+});

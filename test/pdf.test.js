@@ -4,7 +4,22 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { writeResumePdf } = require('../lib/pdf');
+const { writeResumePdf, renderTo } = require('../lib/pdf');
+
+/** A chainable pdfkit stand-in that records every string passed to .text(). */
+function mockDoc() {
+  const texts = [];
+  const doc = {
+    y: 100,
+    page: { margins: { left: 54, bottom: 54 }, width: 612, height: 792 },
+    text(s) { texts.push(String(s)); return doc; },
+    font() { return doc; }, fontSize() { return doc; }, fillColor() { return doc; },
+    moveDown() { return doc; }, moveTo() { return doc; }, lineTo() { return doc; },
+    lineWidth() { return doc; }, strokeColor() { return doc; }, stroke() { return doc; },
+  };
+  doc.texts = texts;
+  return doc;
+}
 
 const RESUME = [
   'Jane Doe',
@@ -44,4 +59,26 @@ test('creates parent directories and always writes a NEW file', async () => {
   const out = path.join(dir, 'a', 'b', 'resume.pdf');
   const written = await writeResumePdf(RESUME, null, out);
   assert.ok(fs.existsSync(written));
+});
+
+test('every string rendered to the PDF is accent-stripped / ASCII (ATS-safe)', () => {
+  const { parseResume } = require('../lib/docx');
+  const accented = [
+    'José Ñoño',
+    '## Expérience',
+    '- Managed café rollout across São Paulo — 3× growth using “lean” methods.',
+  ].join('\n');
+  const doc = mockDoc();
+  renderTo(doc, parseResume(accented), null, 'Tailored for Señor Rôle — résumé draft.');
+  assert.ok(doc.texts.length > 0);
+  for (const s of doc.texts) {
+    // The only intentional non-ASCII glyph is the "•" bullet marker (WinAnsi-encodable,
+    // added by the renderer, not resume content). Content after it must be pure ASCII.
+    const content = s.replace(/^• /, '');
+    assert.ok(/^[\x00-\x7F]*$/.test(content), `non-ASCII leaked into the PDF: ${JSON.stringify(s)}`);
+  }
+  const joined = doc.texts.join(' ');
+  assert.match(joined, /Jose Nono/);
+  assert.match(joined, /Sao Paulo/);
+  assert.match(joined, /"lean"/, 'smart quotes folded to straight');
 });
