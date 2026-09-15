@@ -93,6 +93,8 @@ function rolesPayload(s = store.load()) {
   });
 }
 
+const SEARCH_SINCE_DAYS = 7; // only surface postings from the last week
+
 /** Run the searcher's Claude Code source; ingest results if present, else return the handoff. */
 function runSearch(body = {}) {
   const params = {
@@ -101,6 +103,7 @@ function runSearch(body = {}) {
     salaryMin: body.salaryMin != null && body.salaryMin !== '' ? Number(body.salaryMin) : null,
     salaryMax: body.salaryMax != null && body.salaryMax !== '' ? Number(body.salaryMax) : null,
     country: body.country || 'us',
+    sinceDays: body.sinceDays != null && body.sinceDays !== '' ? Number(body.sinceDays) : SEARCH_SINCE_DAYS,
   };
   if (!params.title) { const e = new Error('A job title is required.'); e.status = 400; throw e; }
 
@@ -109,7 +112,28 @@ function runSearch(body = {}) {
     const s = store.load();
     const { added, skipped } = store.addRoles(s, result.roles);
     store.save(s);
-    return { status: 'ingested', added, skipped, total: result.total ?? result.roles.length };
+    // Consume the results file so the NEXT run re-searches instead of re-ingesting the same
+    // file — the core of the "new searches surface no new jobs" fix.
+    claudeSource.archiveResults(params);
+    const sinceDays = result.sinceDays ?? params.sinceDays;
+    const common = {
+      added, skipped, sinceDays,
+      total: result.total ?? result.roles.length,
+      recent: result.recent ?? result.roles.length,
+      stale: result.stale ?? 0,
+    };
+    if (added === 0) {
+      // Nothing new within the window → tell the user plainly to expand their criteria.
+      const reason = common.recent === 0
+        ? `No job postings from the last ${sinceDays} days came back for these criteria.`
+        : `The ${common.recent} recent posting(s) found are already in your list.`;
+      return {
+        status: 'no_new',
+        ...common,
+        message: `${reason} Expand your search — broaden the title or location, or lower the minimum salary — then run it again.`,
+      };
+    }
+    return { status: 'ingested', ...common };
   }).catch((err) => {
     if (err.code === 'HANDOFF_PENDING') {
       return { status: 'handoff', prompt: err.prompt, requestFile: err.requestFile, resultsFile: err.resultsFile };
