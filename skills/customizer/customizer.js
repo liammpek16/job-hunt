@@ -22,10 +22,11 @@ const path = require('path');
 const { tailorResume, formatTailorReport } = require('../../lib/tailor');
 const { scoreBullet } = require('../../lib/xyz');
 const { writeResumeDocx } = require('../../lib/docx');
+const { writeResumePdf } = require('../../lib/pdf');
 const store = require('../../lib/store');
 
 function parseArgs(argv) {
-  const a = { resume: null, jd: null, role: null, json: false, out: null, docx: null };
+  const a = { resume: null, jd: null, role: null, json: false, out: null, docx: null, pdf: null };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (k === '--resume') a.resume = argv[++i];
@@ -34,6 +35,7 @@ function parseArgs(argv) {
     else if (k === '--json') a.json = true;
     else if (k === '--out') a.out = argv[++i];
     else if (k === '--docx') a.docx = argv[++i];
+    else if (k === '--pdf') a.pdf = argv[++i];
   }
   return a;
 }
@@ -62,15 +64,19 @@ async function main() {
   const report = tailorResume(resumeText, jd.text);
   const out = args.json ? JSON.stringify(report, null, 2) : formatTailorReport(report, jd.label);
   if (args.out) { fs.writeFileSync(path.resolve(args.out), out); console.error(`Wrote report to ${args.out}`); }
-  else if (!args.docx) process.stdout.write(out + '\n');
+  else if (!args.docx && !args.pdf) process.stdout.write(out + '\n');
 
+  const missing = report.coverage.missing.map((k) => k.term).slice(0, 15).join(', ');
+  const note = `Tailored for ${jd.label}. Weave these missing JD keywords in where truthful: `
+    + `${missing || '(none — good coverage)'}. Weak bullets below carry XYZ rewrite scaffolds — `
+    + 'fill the [bracketed] placeholders. Original resume unchanged; review before sending.';
   if (args.docx) {
-    const missing = report.coverage.missing.map((k) => k.term).slice(0, 15).join(', ');
-    const note = `Tailored for ${jd.label}. Weave these missing JD keywords in where truthful: `
-      + `${missing || '(none — good coverage)'}. Weak bullets below carry XYZ rewrite scaffolds — `
-      + 'fill the [bracketed] placeholders. Original resume unchanged; review before sending.';
     const written = await writeResumeDocx(resumeText, improveBullet, args.docx, note);
     console.error(`Wrote tailored-resume .docx to ${path.relative(process.cwd(), written)}`);
+  }
+  if (args.pdf) {
+    const written = await writeResumePdf(resumeText, improveBullet, args.pdf, note);
+    console.error(`Wrote tailored-resume .pdf to ${path.relative(process.cwd(), written)}`);
   }
 }
 

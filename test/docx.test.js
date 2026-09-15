@@ -27,6 +27,15 @@ test('parseResume classifies name, section, subhead, bullets', () => {
   assert.strictEqual(p.filter((l) => l.type === 'bullet').length, 3);
 });
 
+test('parseResume strips markdown ATX headings (#, ##, ###) — no marker leaks', () => {
+  const p = parseResume('# Liam Pek\nBoston MA\n## Experience\n### Engineer | Acme | 2024\n- Did a thing');
+  assert.strictEqual(p[0].type, 'name');
+  assert.strictEqual(p[0].text, 'Liam Pek', 'name has no leading #');
+  assert.ok(p.some((l) => l.type === 'section' && l.text === 'Experience'), '## → section, marker stripped');
+  assert.ok(p.some((l) => l.type === 'subhead' && l.text === 'Engineer | Acme | 2024'), '### → subhead, marker stripped');
+  assert.ok(!p.some((l) => /(^|\s)#/.test(l.text || '')), 'no # survives in any line');
+});
+
 test('reviewer improveBullet keeps full XYZ, rewrites weak ones', () => {
   assert.strictEqual(improveBullet('Reduced latency by 40% by adding a cache'), 'Reduced latency by 40% by adding a cache');
   const weak = improveBullet('Responsible for the backend services');

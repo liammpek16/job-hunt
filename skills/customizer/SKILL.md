@@ -22,6 +22,7 @@ node skills/customizer/customizer.js --resume resume.md --jd job.txt
 node skills/customizer/customizer.js --resume resume.md --role "adzuna:12345"   # JD from the store
 node skills/customizer/customizer.js --resume resume.md --jd job.txt --json      # structured
 node skills/customizer/customizer.js --resume resume.md --jd job.txt --docx tailored.docx
+node skills/customizer/customizer.js --resume resume.md --jd job.txt --pdf tailored.pdf
 ```
 
 `--role` pulls the JD from a saved role in `data/jobs.json` (from the searcher), so the whole
@@ -29,7 +30,8 @@ pipeline — search → tailor — shares one store.
 
 `--docx <out.docx>` writes a **new** tailored-resume Word file: weak bullets replaced by their
 XYZ rewrite, and a header note listing the JD keywords to weave in (truthfully). The original
-resume is never modified.
+resume is never modified. `--pdf <out.pdf>` writes the same tailored resume as a PDF (pdfkit, no
+Word required); pass both flags for both files.
 
 ## Output contract
 

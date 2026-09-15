@@ -26,12 +26,14 @@ node skills/ats/ats.js --resume resume.md --jd job.txt         # + keyword match
 node skills/ats/ats.js --resume resume.md --role "adzuna:123"  # JD from the shared store
 node skills/ats/ats.js --resume resume.md --jd job.txt --json  # structured
 node skills/ats/ats.js --resume resume.md --jd job.txt --docx ats-safe.docx
+node skills/ats/ats.js --resume resume.md --jd job.txt --pdf ats-safe.pdf
 ```
 
 `--docx <out.docx>` writes a **new**, ATS-safe Word version of the resume: the rebuild itself
 removes structural risks (no pipe-tables, images, or HTML survive), bullets are ASCII-normalized
 (straight quotes/dashes), and a header note lists the remaining risks to address (e.g. missing
-keywords — add those truthfully). The original resume is never modified.
+keywords — add those truthfully). The original resume is never modified. `--pdf <out.pdf>` writes
+the same ATS-safe resume as a PDF (pdfkit, no Word required); pass both flags for both files.
 
 Exit code `1` on **high risk** so a pipeline can gate on it. JD is optional (without it,
 keyword checks are skipped).

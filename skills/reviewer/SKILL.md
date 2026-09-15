@@ -21,7 +21,13 @@ node skills/reviewer/reviewer.js samples/sample-resume.md --json   # structured 
 node skills/reviewer/reviewer.js --stdin < resume.md               # pipe in text
 node skills/reviewer/reviewer.js resume.md --out scorecard.md      # write scorecard to a file
 node skills/reviewer/reviewer.js resume.md --docx improved.docx    # NEW .docx with improved bullets
+node skills/reviewer/reviewer.js resume.md --pdf improved.pdf      # NEW .pdf (same content, PDF format)
 ```
+
+## `--docx` / `--pdf` — generate an improved-resume file
+
+`--pdf <out.pdf>` is the twin of `--docx` — identical content, rendered to PDF (pdfkit, no Word
+needed). Pass both to get both files.
 
 ## `--docx` — generate an improved-resume Word file
 
