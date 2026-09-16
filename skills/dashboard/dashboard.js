@@ -34,6 +34,19 @@ const { scoreBullet } = require('../../lib/xyz');
 const { renderApp } = require('../../lib/webapp');
 const claudeSource = require('../../lib/sources/claude');
 
+/**
+ * Selectable search sources for the webapp — only the ones that need NO API key.
+ *   claude  — Claude Code subscription web search (two-phase file handoff)
+ *   greenhouse / lever / ashby — official public ATS board APIs, fetched live
+ * (adzuna/linkedin need keys, so they are not offered in the browser.)
+ */
+const SEARCH_SOURCES = {
+  claude: { label: 'Claude web search', kind: 'handoff', module: claudeSource },
+  greenhouse: { label: 'Greenhouse boards', kind: 'live', module: require('../../lib/sources/greenhouse') },
+  lever: { label: 'Lever boards', kind: 'live', module: require('../../lib/sources/lever') },
+  ashby: { label: 'Ashby boards', kind: 'live', module: require('../../lib/sources/ashby') },
+};
+
 /** Same per-bullet transform the customizer uses: replace weak bullets with their XYZ rewrite. */
 function improveBullet(text) {
   const b = scoreBullet(text);
@@ -95,8 +108,40 @@ function rolesPayload(s = store.load()) {
 
 const SEARCH_SINCE_DAYS = 7; // only surface postings from the last week
 
-/** Run the searcher's Claude Code source; ingest results if present, else return the handoff. */
-function runSearch(body = {}) {
+/** Ingest a source result into the store and shape the ingested / no_new response. */
+function ingestResult(result, params, sourceName) {
+  const s = store.load();
+  const { added, skipped } = store.addRoles(s, result.roles);
+  store.save(s);
+  const sinceDays = result.sinceDays ?? params.sinceDays;
+  const common = {
+    source: sourceName, added, skipped, sinceDays,
+    total: result.total ?? result.roles.length,
+    recent: result.recent ?? result.roles.length,
+    stale: result.stale ?? 0,
+  };
+  if (added === 0) {
+    const reason = common.recent === 0
+      ? `No job postings from the last ${sinceDays} days came back for these criteria.`
+      : `The ${common.recent} recent posting(s) found are already in your list.`;
+    const widen = sourceName === 'claude'
+      ? 'Expand your search — broaden the title or location, or lower the minimum salary — then run it again.'
+      : `Try a wider "posted within" window, broaden the title/location, or add companies to the ${sourceName} board list.`;
+    return { status: 'no_new', ...common, message: `${reason} ${widen}` };
+  }
+  return { status: 'ingested', ...common };
+}
+
+/**
+ * Run a job search on a selected no-key source and ingest the results.
+ *   • claude — two-phase file handoff (returns a handoff prompt on the first run).
+ *   • greenhouse / lever / ashby — fetched live from the official board APIs.
+ */
+async function runSearch(body = {}) {
+  const sourceName = String(body.source || 'claude').toLowerCase();
+  const src = SEARCH_SOURCES[sourceName];
+  if (!src) { const e = new Error(`Unknown search source "${sourceName}".`); e.status = 400; throw e; }
+
   const params = {
     title: String(body.title || '').trim(),
     location: String(body.location || '').trim(),
@@ -107,39 +152,25 @@ function runSearch(body = {}) {
   };
   if (!params.title) { const e = new Error('A job title is required.'); e.status = 400; throw e; }
 
-  // fetchRoles resolves once Claude's results file exists; otherwise it throws HANDOFF_PENDING.
-  return claudeSource.fetchRoles(params, SEARCH_TARGET).then((result) => {
-    const s = store.load();
-    const { added, skipped } = store.addRoles(s, result.roles);
-    store.save(s);
-    // Consume the results file so the NEXT run re-searches instead of re-ingesting the same
-    // file — the core of the "new searches surface no new jobs" fix.
-    claudeSource.archiveResults(params);
-    const sinceDays = result.sinceDays ?? params.sinceDays;
-    const common = {
-      added, skipped, sinceDays,
-      total: result.total ?? result.roles.length,
-      recent: result.recent ?? result.roles.length,
-      stale: result.stale ?? 0,
-    };
-    if (added === 0) {
-      // Nothing new within the window → tell the user plainly to expand their criteria.
-      const reason = common.recent === 0
-        ? `No job postings from the last ${sinceDays} days came back for these criteria.`
-        : `The ${common.recent} recent posting(s) found are already in your list.`;
-      return {
-        status: 'no_new',
-        ...common,
-        message: `${reason} Expand your search — broaden the title or location, or lower the minimum salary — then run it again.`,
-      };
-    }
-    return { status: 'ingested', ...common };
+  return src.module.fetchRoles(params, SEARCH_TARGET).then((result) => {
+    const out = ingestResult(result, params, sourceName);
+    // Claude's handoff caches a results file; consume it so the next run re-searches.
+    if (src.kind === 'handoff') claudeSource.archiveResults(params);
+    // Surface board-fetch errors (e.g. a 404 board) without failing the whole search.
+    if (Array.isArray(result.errors) && result.errors.length) out.sourceErrors = result.errors.length;
+    return out;
   }).catch((err) => {
     if (err.code === 'HANDOFF_PENDING') {
-      return { status: 'handoff', prompt: err.prompt, requestFile: err.requestFile, resultsFile: err.resultsFile };
+      return { status: 'handoff', source: sourceName, prompt: err.prompt, requestFile: err.requestFile, resultsFile: err.resultsFile };
     }
+    if (err.code === 'NO_BOARDS') { err.status = 400; }
     throw err;
   });
+}
+
+/** The no-key sources the webapp offers, for the source dropdown. */
+function searchSources() {
+  return Object.entries(SEARCH_SOURCES).map(([name, s]) => ({ name, label: s.label, kind: s.kind }));
 }
 
 /**
@@ -228,6 +259,9 @@ function createServer() {
       if (req.method === 'GET' && p === '/api/roles') {
         sendJson(res, 200, { roles: rolesPayload() }); return;
       }
+      if (req.method === 'GET' && p === '/api/sources') {
+        sendJson(res, 200, { sources: searchSources() }); return;
+      }
       if (req.method === 'GET' && p === '/api/tailored') {
         const id = url.searchParams.get('id') || '';
         const rec = tailored.load(id);
@@ -297,5 +331,5 @@ if (require.main === module) {
 }
 module.exports = {
   parseArgs, createServer, renderLiveHtml, serve, DEFAULT_PORT,
-  rolesPayload, runSearch, refineRole,
+  rolesPayload, runSearch, refineRole, searchSources, SEARCH_SOURCES,
 };
