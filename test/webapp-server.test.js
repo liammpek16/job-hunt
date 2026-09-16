@@ -14,7 +14,7 @@ function boot() {
   });
 }
 
-test('GET / serves the interactive webapp shell', async () => {
+test('GET / serves the interactive webapp shell with source + recency selectors', async () => {
   const s = await boot();
   try {
     const r = await fetch(s.base + '/');
@@ -23,6 +23,29 @@ test('GET / serves the interactive webapp shell', async () => {
     assert.match(html, /Job Hunt Dashboard/);
     assert.match(html, /Run a job search/);
     assert.match(html, /Surfaced jobs/);
+    assert.match(html, /id="qSource"/, 'source dropdown present');
+    assert.match(html, /id="qSince"/, 'recency dropdown present');
+    assert.match(html, /\/api\/sources/, 'client loads the source list');
+  } finally { await s.close(); }
+});
+
+test('GET /api/sources lists the no-key sources', async () => {
+  const s = await boot();
+  try {
+    const r = await fetch(s.base + '/api/sources');
+    assert.strictEqual(r.status, 200);
+    const { sources } = await r.json();
+    const names = sources.map((x) => x.name);
+    for (const n of ['claude', 'greenhouse', 'lever', 'ashby']) assert.ok(names.includes(n), 'has ' + n);
+  } finally { await s.close(); }
+});
+
+test('POST /api/search with an unknown source is 400', async () => {
+  const s = await boot();
+  try {
+    const r = await fetch(s.base + '/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'X', source: 'bogus' }) });
+    assert.strictEqual(r.status, 400);
+    assert.ok((await r.json()).error);
   } finally { await s.close(); }
 });
 
