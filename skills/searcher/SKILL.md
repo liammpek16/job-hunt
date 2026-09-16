@@ -57,6 +57,29 @@ export LINKEDIN_JOBS_API_HOST=linkedin-jobs-search.p.rapidapi.com   # or your pr
 No LinkedIn key → the searcher just uses Adzuna. Either way the results normalize to the same
 shared shape and land in the same store.
 
+### `greenhouse` source (no key, no browser — official public boards)
+
+`--source greenhouse` scrapes company **Greenhouse job boards** through their **official public
+API** (`boards-api.greenhouse.io/v1/boards/<token>/jobs`) — no key, no browser, no HTML parsing.
+It pulls every open posting from a seed list of company board tokens
+(`lib/sources/greenhouse-companies.json`), filters by title keywords + location + the recency
+window, dedupes, and normalizes to the shared shape (`source:"greenhouse"`). Configure the boards:
+
+```bash
+node skills/searcher/searcher.js --source greenhouse --title "Sales Engineer" --location "New York"
+GREENHOUSE_COMPANIES="datadog,twilio,samsara" node skills/searcher/searcher.js --source greenhouse --title "Sales Engineer"
+```
+
+Add companies by editing `lib/sources/greenhouse-companies.json` (the `token` is the slug in
+`boards.greenhouse.io/<token>`), setting `GREENHOUSE_COMPANIES="tok1,tok2"`, or dropping a
+`data/greenhouse-companies.json`. Unknown tokens simply 404 and are skipped. **Lever and Ashby
+publish equivalent key-less board APIs** and are the natural next sources to add the same way.
+
+### Recency window
+
+All sources honor `--since-days N` (default **7**): only postings created/updated within the last
+N days are ingested. Widen it (e.g. `--since-days 30`) if a search reports no new roles.
+
 ## Setup (one time)
 
 Get a free key at **developer.adzuna.com** (gives an `app_id` + `app_key`), then:

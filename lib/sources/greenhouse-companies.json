@@ -1,0 +1,13 @@
+{
+  "_comment": "Seed list of company Greenhouse job-board tokens for the greenhouse source. The token is the slug in a board URL: https://boards.greenhouse.io/<token> (or boards-api.greenhouse.io/v1/boards/<token>/jobs). Add any company that hosts its careers page on Greenhouse. Override at runtime with GREENHOUSE_COMPANIES=\"tok1,tok2\" or a data/greenhouse-companies.json file. Unknown/typo tokens simply 404 and are skipped.",
+  "boards": [
+    { "token": "datadog", "name": "Datadog" },
+    { "token": "twilio", "name": "Twilio" },
+    { "token": "samsara", "name": "Samsara" },
+    { "token": "vimeo", "name": "Vimeo" },
+    { "token": "yext", "name": "Yext" },
+    { "token": "sumologic", "name": "Sumo Logic" },
+    { "token": "similarweb", "name": "Similarweb" },
+    { "token": "transmitsecurity", "name": "Transmit Security" }
+  ]
+}
