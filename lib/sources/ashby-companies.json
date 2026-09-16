@@ -1,0 +1,12 @@
+{
+  "_comment": "Seed list of company Ashby org slugs for the ashby source. The slug is the segment in a board URL: https://jobs.ashbyhq.com/<slug> (or api.ashbyhq.com/posting-api/job-board/<slug>). Add any company whose careers page is on Ashby. Override with ASHBY_COMPANIES=\"org1,org2\" or a data/ashby-companies.json file. Unknown slugs 404 (or return no jobs) and are skipped.",
+  "boards": [
+    { "token": "openai", "name": "OpenAI" },
+    { "token": "ramp", "name": "Ramp" },
+    { "token": "notion", "name": "Notion" },
+    { "token": "replit", "name": "Replit" },
+    { "token": "linear", "name": "Linear" },
+    { "token": "hex", "name": "Hex" },
+    { "token": "tessera-labs", "name": "Tessera Labs" }
+  ]
+}
