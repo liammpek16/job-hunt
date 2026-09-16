@@ -57,23 +57,31 @@ export LINKEDIN_JOBS_API_HOST=linkedin-jobs-search.p.rapidapi.com   # or your pr
 No LinkedIn key → the searcher just uses Adzuna. Either way the results normalize to the same
 shared shape and land in the same store.
 
-### `greenhouse` source (no key, no browser — official public boards)
+### Board sources — `greenhouse`, `lever`, `ashby` (no key, no browser)
 
-`--source greenhouse` scrapes company **Greenhouse job boards** through their **official public
-API** (`boards-api.greenhouse.io/v1/boards/<token>/jobs`) — no key, no browser, no HTML parsing.
-It pulls every open posting from a seed list of company board tokens
-(`lib/sources/greenhouse-companies.json`), filters by title keywords + location + the recency
-window, dedupes, and normalizes to the shared shape (`source:"greenhouse"`). Configure the boards:
+Three sources scrape company ATS **job boards** through their **official public JSON APIs** — no
+key, no browser, no HTML parsing. Each pulls every open posting from a seed list of company
+boards, filters by title keywords + location + the recency window, dedupes, and normalizes to the
+shared shape:
+
+| Source | API | Seed file / env |
+|---|---|---|
+| `greenhouse` | `boards-api.greenhouse.io/v1/boards/<token>/jobs` | `lib/sources/greenhouse-companies.json` · `GREENHOUSE_COMPANIES` |
+| `lever` | `api.lever.co/v0/postings/<token>?mode=json` | `lib/sources/lever-companies.json` · `LEVER_COMPANIES` |
+| `ashby` | `api.ashbyhq.com/posting-api/job-board/<org>` | `lib/sources/ashby-companies.json` · `ASHBY_COMPANIES` |
 
 ```bash
 node skills/searcher/searcher.js --source greenhouse --title "Sales Engineer" --location "New York"
-GREENHOUSE_COMPANIES="datadog,twilio,samsara" node skills/searcher/searcher.js --source greenhouse --title "Sales Engineer"
+node skills/searcher/searcher.js --source lever      --title "Sales Engineer"
+node skills/searcher/searcher.js --source ashby      --title "Sales Engineer" --since-days 30
+GREENHOUSE_COMPANIES="datadog,twilio" node skills/searcher/searcher.js --source greenhouse --title "SE"
 ```
 
-Add companies by editing `lib/sources/greenhouse-companies.json` (the `token` is the slug in
-`boards.greenhouse.io/<token>`), setting `GREENHOUSE_COMPANIES="tok1,tok2"`, or dropping a
-`data/greenhouse-companies.json`. Unknown tokens simply 404 and are skipped. **Lever and Ashby
-publish equivalent key-less board APIs** and are the natural next sources to add the same way.
+Add companies by editing the source's seed JSON (the `token` is the slug in the board URL, e.g.
+`boards.greenhouse.io/<token>`, `jobs.lever.co/<token>`, `jobs.ashbyhq.com/<org>`), setting the
+env var (`"tok1,tok2"`), or dropping a `data/<source>-companies.json`. Unknown tokens simply 404
+(or return no jobs) and are skipped. Shared machinery lives in `lib/sources/board-common.js`, so
+adding another board platform is ~30 lines (URL + job-array + per-job normalize).
 
 ### Recency window
 
