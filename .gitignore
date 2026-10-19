@@ -4,3 +4,5 @@ data/tailored/
 data/claude-search-*.json
 dashboard.html
 *.log
+data/jobs.backup-*.json
+data/jobs-archive.json

@@ -1,0 +1,9 @@
+{
+  "_comment": "Seed list of Workable account slugs for the workable source (the segment in https://apply.workable.com/<slug>). Override with WORKABLE_COMPANIES=\"slug1,slug2\" or data/workable-companies.json. The watchlist scan uses config/companies.json instead.",
+  "boards": [
+    {
+      "token": "huggingface",
+      "name": "Hugging Face"
+    }
+  ]
+}

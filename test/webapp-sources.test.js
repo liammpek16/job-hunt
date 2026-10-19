@@ -6,9 +6,9 @@ const store = require('../lib/store');
 
 function iso(d) { return new Date(Date.now() - d * 24 * 3600 * 1000).toISOString(); }
 
-test('searchSources lists the four no-key sources with kinds', () => {
+test('searchSources lists the six no-key sources with kinds', () => {
   const names = dash.searchSources().map((s) => s.name);
-  assert.deepStrictEqual(names.sort(), ['ashby', 'claude', 'greenhouse', 'lever']);
+  assert.deepStrictEqual(names.sort(), ['ashby', 'claude', 'greenhouse', 'lever', 'smartrecruiters', 'workable']);
   const byName = Object.fromEntries(dash.searchSources().map((s) => [s.name, s]));
   assert.strictEqual(byName.claude.kind, 'handoff');
   assert.strictEqual(byName.greenhouse.kind, 'live');
@@ -78,4 +78,14 @@ test('runSearch surfaces board-fetch errors without failing', async () => {
   } finally {
     const s = store.load(); if (s.roles[id]) { delete s.roles[id]; store.save(s); }
   }
+});
+
+test('rolesPayload hides closed roles unless applied to', () => {
+  const s = { roles: {
+    open: { id: 'open', title: 'Sales Engineer', company: 'A', triage: 'new' },
+    shut: { id: 'shut', title: 'Sales Engineer', company: 'B', triage: 'backlog', closedAt: '2026-10-20T00:00:00Z' },
+    applied: { id: 'applied', title: 'Sales Engineer', company: 'C', triage: 'backlog', closedAt: '2026-10-20T00:00:00Z' },
+  }, apps: { applied: { status: 'applied' } }, meta: {} };
+  const ids = dash.rolesPayload(s).map((r) => r.id).sort();
+  assert.deepStrictEqual(ids, ['applied', 'open']);
 });

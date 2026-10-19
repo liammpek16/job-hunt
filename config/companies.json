@@ -1,0 +1,1632 @@
+{
+  "_comment": "Company watchlist for the daily scan. tier: A = closest fit (simulation/CAE, engineering software, hardware and robotics), B = dev tools, data, AI and security with SE teams, C = other SaaS. `ats`/`slug`/`jobs`/`checkedAt` are written by `npm run detect` (ats \"none\" = no public board found, not covered). Add a company with just a name and tier, then run `npm run detect`. `slugs` are optional extra slug guesses. Blocklisted names are never scanned or shown.",
+  "blocklist": [
+    "Jobgether",
+    "Jobot",
+    "Robert Half",
+    "TEKsystems",
+    "Insight Global",
+    "Randstad",
+    "Kforce",
+    "Aerotek",
+    "CyberCoders",
+    "Motion Recruitment",
+    "Hired",
+    "Dice",
+    "Lensa",
+    "Talentify",
+    "Recruiting from Scratch",
+    "Crossover",
+    "Turing",
+    "Toptal",
+    "Actalent",
+    "Apex Systems"
+  ],
+  "companies": [
+    {
+      "name": "Rescale",
+      "tier": "A",
+      "ats": "ashby",
+      "slug": "rescale",
+      "jobs": 17,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "SimScale",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "simscale",
+      "jobs": 1,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "PhysicsX",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "physicsx",
+      "jobs": 40,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Luminary Cloud",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "nTop",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Neural Concept",
+      "tier": "A",
+      "ats": "ashby",
+      "slug": "neuralconcept",
+      "jobs": 37,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Formlabs",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "formlabs",
+      "jobs": 247,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Markforged",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "markforged",
+      "jobs": 4,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Onshape",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Altair",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Ansys",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Hexagon",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Applied Intuition",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Duality Robotics",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Foxglove",
+      "tier": "A",
+      "ats": "ashby",
+      "slug": "foxglove",
+      "jobs": 3,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Hadrian",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Divergent",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "divergent",
+      "jobs": 121,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Machina Labs",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Bright Machines",
+      "tier": "A",
+      "ats": "lever",
+      "slug": "brightmachines",
+      "jobs": 16,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Path Robotics",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "pathrobotics",
+      "jobs": 44,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Synera",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Monolith AI",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Altium",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Zoo",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "zoo",
+      "jobs": 9,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Navier AI",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Inductive Automation",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Tulip Interfaces",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "tulip",
+      "jobs": 62,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Vention",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Desktop Metal",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "VulcanForms",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Fictiv",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "fictiv",
+      "jobs": 91,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Xometry",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "xometry",
+      "jobs": 220,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Protolabs",
+      "tier": "A",
+      "ats": "lever",
+      "slug": "protolabs",
+      "jobs": 70,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Paperless Parts",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "paperlessparts",
+      "jobs": 15,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "First Resonance",
+      "tier": "A",
+      "ats": "ashby",
+      "slug": "first-resonance",
+      "jobs": 14,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "CloudNC",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Instrumental",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Quilter",
+      "tier": "A",
+      "ats": "ashby",
+      "slug": "quilter",
+      "jobs": 5,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Flux",
+      "tier": "A",
+      "ats": "ashby",
+      "slug": "flux",
+      "jobs": 7,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Cofactr",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Dirac",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Anduril",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Shield AI",
+      "tier": "A",
+      "ats": "lever",
+      "slug": "shieldai",
+      "jobs": 643,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Boston Dynamics",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Agility Robotics",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "agilityrobotics",
+      "jobs": 76,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Locus Robotics",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "locusrobotics",
+      "jobs": 4,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Berkshire Grey",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Realtime Robotics",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Ouster",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Velo3D",
+      "tier": "A",
+      "ats": "lever",
+      "slug": "velo3d",
+      "jobs": 42,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Carbon",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Nominal",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Sift",
+      "tier": "A",
+      "ats": "ashby",
+      "slug": "sift",
+      "jobs": 7,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Epsilon3",
+      "tier": "A",
+      "ats": "lever",
+      "slug": "epsilon3",
+      "jobs": 4,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Ion Storage Systems",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Commonwealth Fusion Systems",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Form Energy",
+      "tier": "A",
+      "ats": "ashby",
+      "slug": "formenergy",
+      "jobs": 209,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Electric Hydrogen",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Boston Metal",
+      "tier": "A",
+      "checkedAt": "2026-10-19",
+      "ats": "workable",
+      "slug": "boston-metal",
+      "jobs": 4
+    },
+    {
+      "name": "Sila Nanotechnologies",
+      "tier": "A",
+      "ats": "greenhouse",
+      "slug": "silananotechnologies",
+      "jobs": 41,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Datadog",
+      "tier": "B",
+      "slugs": [
+        "datadog"
+      ],
+      "ats": "greenhouse",
+      "slug": "datadog",
+      "jobs": 429,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "MongoDB",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "mongodb",
+      "jobs": 396,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Snowflake",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "snowflake",
+      "jobs": 360,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Databricks",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "databricks",
+      "jobs": 901,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Confluent",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Elastic",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "elastic",
+      "jobs": 377,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Cockroach Labs",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "cockroachlabs",
+      "jobs": 17,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Grafana Labs",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "grafanalabs",
+      "jobs": 137,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Postman",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Vercel",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "vercel",
+      "jobs": 93,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Temporal Technologies",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Sentry",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "sentry",
+      "jobs": 45,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "LaunchDarkly",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "launchdarkly",
+      "jobs": 51,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "PagerDuty",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "pagerduty",
+      "jobs": 57,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "New Relic",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "newrelic",
+      "jobs": 53,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Dynatrace",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Sumo Logic",
+      "tier": "B",
+      "slugs": [
+        "sumologic"
+      ],
+      "ats": "greenhouse",
+      "slug": "sumologic",
+      "jobs": 11,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Twilio",
+      "tier": "B",
+      "slugs": [
+        "twilio"
+      ],
+      "ats": "greenhouse",
+      "slug": "twilio",
+      "jobs": 134,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Cribl",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "cribl",
+      "jobs": 72,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Starburst",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "starburst",
+      "jobs": 31,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "DataRobot",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "dbt Labs",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Fivetran",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "fivetran",
+      "jobs": 177,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Airbyte",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "airbyte",
+      "jobs": 13,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Hightouch",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "hightouch",
+      "jobs": 1,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Amplitude",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "amplitude",
+      "jobs": 40,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Mixpanel",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "mixpanel",
+      "jobs": 47,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Hex",
+      "tier": "B",
+      "slugs": [
+        "hex"
+      ],
+      "ats": "ashby",
+      "slug": "hex",
+      "jobs": 42,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Retool",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Weights & Biases",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Pinecone",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "pinecone",
+      "jobs": 5,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Glean",
+      "tier": "B",
+      "slug": "Glean",
+      "jobs": 1,
+      "checkedAt": "2026-10-19",
+      "ats": "smartrecruiters"
+    },
+    {
+      "name": "Writer",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "writer",
+      "jobs": 47,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Cohere",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "cohere",
+      "jobs": 115,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Anthropic",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "anthropic",
+      "jobs": 666,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "OpenAI",
+      "tier": "B",
+      "slugs": [
+        "openai"
+      ],
+      "ats": "ashby",
+      "slug": "openai",
+      "jobs": 805,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Scale AI",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "scaleai",
+      "jobs": 181,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Hugging Face",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "workable",
+      "slug": "huggingface",
+      "jobs": 6
+    },
+    {
+      "name": "Modal",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "modal",
+      "jobs": 43,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Replit",
+      "tier": "B",
+      "slugs": [
+        "replit"
+      ],
+      "ats": "ashby",
+      "slug": "replit",
+      "jobs": 64,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Sigma Computing",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "sigmacomputing",
+      "jobs": 75,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "ThoughtSpot",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Alation",
+      "tier": "B",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Collibra",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "collibra",
+      "jobs": 32,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Monte Carlo",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Astronomer",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "astronomer",
+      "jobs": 18,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Dagster Labs",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "ClickHouse",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "clickhouse",
+      "jobs": 199,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "SingleStore",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "singlestore",
+      "jobs": 43,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Redis",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "redis",
+      "jobs": 28,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Neo4j",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "neo4j",
+      "jobs": 64,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Couchbase",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Yugabyte",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "yugabyte",
+      "jobs": 15,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "PlanetScale",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "planetscale",
+      "jobs": 11,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Supabase",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "supabase",
+      "jobs": 53,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Tines",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "tines",
+      "jobs": 34,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Torq",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "torq",
+      "jobs": 25,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Wiz",
+      "tier": "B",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Snyk",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "snyk",
+      "jobs": 27,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Abnormal Security",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "abnormalsecurity",
+      "jobs": 82,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Arctic Wolf",
+      "tier": "B",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Rapid7",
+      "tier": "B",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Tanium",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "tanium",
+      "jobs": 73,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Chainguard",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "chainguard",
+      "jobs": 77,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "SentinelOne",
+      "tier": "B",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Vanta",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "vanta",
+      "jobs": 85,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Drata",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "drata",
+      "jobs": 29,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Okta",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "okta",
+      "jobs": 388,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "1Password",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "1password",
+      "jobs": 76,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Netskope",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "netskope",
+      "jobs": 128,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Island",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "island",
+      "jobs": 30,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Huntress",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "huntress",
+      "jobs": 35,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Coalition",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "coalition",
+      "jobs": 43,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Axonius",
+      "tier": "B",
+      "ats": "greenhouse",
+      "slug": "axonius",
+      "jobs": 22,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Cyera",
+      "tier": "B",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Material Security",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "materialsecurity",
+      "jobs": 4,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Semgrep",
+      "tier": "B",
+      "ats": "ashby",
+      "slug": "semgrep",
+      "jobs": 12,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Linear",
+      "tier": "B",
+      "slugs": [
+        "linear"
+      ],
+      "ats": "ashby",
+      "slug": "linear",
+      "jobs": 28,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Notion",
+      "tier": "B",
+      "slugs": [
+        "notion"
+      ],
+      "ats": "ashby",
+      "slug": "notion",
+      "jobs": 133,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Ramp",
+      "tier": "B",
+      "slugs": [
+        "ramp"
+      ],
+      "ats": "ashby",
+      "slug": "ramp",
+      "jobs": 167,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Yext",
+      "tier": "C",
+      "slugs": [
+        "yext"
+      ],
+      "ats": "greenhouse",
+      "slug": "yext",
+      "jobs": 24,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Samsara",
+      "tier": "C",
+      "slugs": [
+        "samsara"
+      ],
+      "ats": "greenhouse",
+      "slug": "samsara",
+      "jobs": 265,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Vimeo",
+      "tier": "C",
+      "slugs": [
+        "vimeo"
+      ],
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Similarweb",
+      "tier": "C",
+      "slugs": [
+        "similarweb"
+      ],
+      "ats": "greenhouse",
+      "slug": "similarweb",
+      "jobs": 69,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Transmit Security",
+      "tier": "C",
+      "slugs": [
+        "transmitsecurity"
+      ],
+      "ats": "greenhouse",
+      "slug": "transmitsecurity",
+      "jobs": 14,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "AHEAD",
+      "tier": "C",
+      "slugs": [
+        "thinkahead"
+      ],
+      "ats": "lever",
+      "slug": "thinkahead",
+      "jobs": 153,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Samba TV",
+      "tier": "C",
+      "slugs": [
+        "sambatv"
+      ],
+      "ats": "lever",
+      "slug": "sambatv",
+      "jobs": 61,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Azul",
+      "tier": "C",
+      "slugs": [
+        "azul"
+      ],
+      "ats": "lever",
+      "slug": "azul",
+      "jobs": 17,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Perforce",
+      "tier": "C",
+      "slugs": [
+        "perforce"
+      ],
+      "ats": "lever",
+      "slug": "perforce",
+      "jobs": 3,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "HubSpot",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Toast",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "toast",
+      "jobs": 315,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Klaviyo",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "klaviyo",
+      "jobs": 159,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "DraftKings",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Wayfair",
+      "tier": "C",
+      "ats": "smartrecruiters",
+      "slug": "Wayfair",
+      "jobs": 1,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Pegasystems",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Akamai",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Braze",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "braze",
+      "jobs": 322,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Iterable",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "iterable",
+      "jobs": 10,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Airtable",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "airtable",
+      "jobs": 4,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Asana",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "asana",
+      "jobs": 109,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "monday.com",
+      "tier": "C",
+      "checkedAt": "2026-10-19",
+      "ats": "none"
+    },
+    {
+      "name": "Smartsheet",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "smartsheet",
+      "jobs": 92,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Zapier",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "zapier",
+      "jobs": 12,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Brex",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "brex",
+      "jobs": 261,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Plaid",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "plaid",
+      "jobs": 132,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Stripe",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "stripe",
+      "jobs": 726,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Modern Treasury",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "moderntreasury",
+      "jobs": 9,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Benchling",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "benchling",
+      "jobs": 55,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Veeva Systems",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Procore",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Motive",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "motive",
+      "jobs": 10,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Flexport",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "flexport",
+      "jobs": 209,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "project44",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "project44",
+      "jobs": 27,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Attentive",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "attentive",
+      "jobs": 27,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Squarespace",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "squarespace",
+      "jobs": 26,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Movable Ink",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "movableink",
+      "jobs": 30,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Dataiku",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "dataiku",
+      "jobs": 13,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Sprinklr",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "UiPath",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "uipath",
+      "jobs": 108,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Celonis",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "celonis",
+      "jobs": 201,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Gong",
+      "tier": "C",
+      "ats": "smartrecruiters",
+      "slug": "GONG",
+      "jobs": 7,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Outreach",
+      "tier": "C",
+      "ats": "lever",
+      "slug": "outreach",
+      "jobs": 26,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Salesloft",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "salesloft",
+      "jobs": 30,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Highspot",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Seismic",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Rippling",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Deel",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Gusto",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "gusto",
+      "jobs": 103,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Lattice",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "lattice",
+      "jobs": 9,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Persona",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "persona",
+      "jobs": 12,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Socure",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "socure",
+      "jobs": 86,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Alloy",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "alloy",
+      "jobs": 25,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Unit",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "unit",
+      "jobs": 3,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Ironclad",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Harvey",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "harvey",
+      "jobs": 341,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Hebbia",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Runway",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "runway",
+      "jobs": 3,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Sierra",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "sierra",
+      "jobs": 187,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Decagon",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "decagon",
+      "jobs": 135,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Verkada",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "verkada",
+      "jobs": 317,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Flatiron Health",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "flatironhealth",
+      "jobs": 20,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Zocdoc",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "zocdoc",
+      "jobs": 59,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Oscar Health",
+      "tier": "C",
+      "ats": "greenhouse",
+      "slug": "oscar",
+      "jobs": 249,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Cedar",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "cedar",
+      "jobs": 3,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Arcadia",
+      "tier": "C",
+      "ats": "lever",
+      "slug": "arcadia",
+      "jobs": 18,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Aurora Solar",
+      "tier": "C",
+      "ats": "ashby",
+      "slug": "aurorasolar",
+      "jobs": 10,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Tessera Labs",
+      "tier": "C",
+      "slugs": [
+        "tessera-labs"
+      ],
+      "ats": "ashby",
+      "slug": "tessera-labs",
+      "jobs": 27,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "ServiceNow",
+      "tier": "C",
+      "ats": "smartrecruiters",
+      "slug": "ServiceNow",
+      "jobs": 694,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Canva",
+      "tier": "C",
+      "ats": "smartrecruiters",
+      "slug": "Canva",
+      "jobs": 111,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Visa",
+      "tier": "C",
+      "ats": "none",
+      "checkedAt": "2026-10-19"
+    }
+  ]
+}
