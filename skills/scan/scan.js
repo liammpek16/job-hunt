@@ -25,6 +25,7 @@ function oneLine(sum) {
   const rej = Object.values(sum.rejected).reduce((a, b) => a + b, 0);
   return `${sum.at} scanned ${sum.scanned}/${sum.boards} boards · ${sum.matched} matching · `
     + `${sum.added.new} new · ${sum.added.backlog} backlog · ${sum.seenAgain} seen again · `
+    + `${sum.closed || 0} closed · ${sum.reopened || 0} reopened · `
     + `${rej} rejected after JD check · ${sum.errors.length} errors`;
 }
 

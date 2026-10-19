@@ -90,3 +90,54 @@ test('watchlist helpers: blocklist, grouping, coverage', () => {
     byAts: { greenhouse: 2, ashby: 0, lever: 0, workable: 0, smartrecruiters: 0 },
   });
 });
+
+test('roles a board stops listing are closed, and reopened if they come back', async () => {
+  const one = gh([[1, 'Sales Engineer', 'Boston, MA', ago(1)], [2, 'Solutions Engineer', 'Boston, MA', ago(1)]]);
+  let acme = one;
+  const http = async (url) => (url.includes('/acme/') ? acme : gh([[7, 'Account Executive', 'Boston, MA', ago(1)]]));
+  const s = store.emptyStore();
+  await runScan({ profile, wl, store: s, now: NOW, httpGetJson: http });
+  const id2 = 'greenhouse:https://boards.greenhouse.io/x/jobs/2';
+  assert.equal(s.roles[id2].board, 'greenhouse:acme');
+
+  // Job 2 disappears; job 1 still listed (plus an unrelated non-matching posting).
+  acme = gh([[1, 'Sales Engineer', 'Boston, MA', ago(1)], [8, 'Recruiter', 'Boston, MA', ago(1)]]);
+  const t2 = new Date(NOW.getTime() + DAY);
+  const sum2 = await runScan({ profile, wl, store: s, now: t2, httpGetJson: http });
+  assert.equal(sum2.closed, 1);
+  assert.equal(s.roles[id2].closedAt, t2.toISOString());
+  assert.ok(!s.roles['greenhouse:https://boards.greenhouse.io/x/jobs/1'].closedAt);
+
+  // A role still on the board but no longer matching the profile is NOT closed.
+  const narrow = { ...profile, titles: ['solutions engineer'] };
+  const sum3 = await runScan({ profile: narrow, wl, store: s, now: t2, httpGetJson: http });
+  assert.equal(sum3.closed, 0);
+
+  // Job 2 comes back → reopened.
+  acme = one;
+  const sum4 = await runScan({ profile, wl, store: s, now: t2, httpGetJson: http });
+  assert.equal(sum4.reopened, 1);
+  assert.ok(!s.roles[id2].closedAt);
+});
+
+test('a board that suddenly returns nothing closes nothing (treated as a glitch)', async () => {
+  let acme = gh([[1, 'Sales Engineer', 'Boston, MA', ago(1)]]);
+  const http = async (url) => (url.includes('/acme/') ? acme : gh([]));
+  const s = store.emptyStore();
+  await runScan({ profile, wl, store: s, now: NOW, httpGetJson: http });
+  acme = gh([]);
+  const sum = await runScan({ profile, wl, store: s, now: NOW, httpGetJson: http });
+  assert.equal(sum.closed, 0);
+  assert.ok(sum.errors.some((e) => e.token === 'acme' && /no postings/.test(e.error)));
+});
+
+test('archiveLegacy moves roles the scan did not produce, keeping applied ones', () => {
+  const { archiveLegacy } = require('../scripts/archive-legacy-roles');
+  const s = { roles: { a: { id: 'a', triage: 'new' }, b: { id: 'b', source: 'claude' }, c: { id: 'c', source: 'lever' } },
+    apps: { c: { status: 'applied' } }, meta: {} };
+  const archive = { roles: {} };
+  const moved = archiveLegacy(s, archive);
+  assert.deepEqual(moved.map((r) => r.id), ['b']);
+  assert.deepEqual(Object.keys(s.roles).sort(), ['a', 'c']);
+  assert.ok(archive.roles.b);
+});

@@ -79,3 +79,13 @@ test('runSearch surfaces board-fetch errors without failing', async () => {
     const s = store.load(); if (s.roles[id]) { delete s.roles[id]; store.save(s); }
   }
 });
+
+test('rolesPayload hides closed roles unless applied to', () => {
+  const s = { roles: {
+    open: { id: 'open', title: 'Sales Engineer', company: 'A', triage: 'new' },
+    shut: { id: 'shut', title: 'Sales Engineer', company: 'B', triage: 'backlog', closedAt: '2026-10-20T00:00:00Z' },
+    applied: { id: 'applied', title: 'Sales Engineer', company: 'C', triage: 'backlog', closedAt: '2026-10-20T00:00:00Z' },
+  }, apps: { applied: { status: 'applied' } }, meta: {} };
+  const ids = dash.rolesPayload(s).map((r) => r.id).sort();
+  assert.deepStrictEqual(ids, ['applied', 'open']);
+});

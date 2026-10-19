@@ -37,7 +37,13 @@ The dashboard (`run-dashboard.ps1`) also has a **Scan watchlist now** button and
   `maxAgeDays` (or no posted date).
 - **backlog**: everything found on a board's first scan (so adding companies doesn't flood
   New), and reopened or old postings.
+- **closed**: a stored role whose board was fetched but no longer lists it gets `closedAt` and
+  is hidden on the dashboard (unless you applied); it reopens if it comes back. A board that
+  suddenly returns nothing closes nothing (logged as an error instead).
 - Each run appends to `data/scan.log` and `store.meta.scans`.
+
+Roles from the pre-revamp sources (Claude web search, old board searches, Jobgether) were moved
+out of the store with `node scripts/archive-legacy-roles.js` into `data/jobs-archive.json`.
 
 ## Detection rules
 A board counts only if it has ≥ 1 open job. Boards that report a company name

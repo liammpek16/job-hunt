@@ -88,10 +88,13 @@ function renderLiveHtml() {
 
 /* ------------------------------- API helpers -------------------------------- */
 
-/** Every surfaced role, ranked by relevance, annotated with status + tailored state. */
+/**
+ * Every surfaced role, ranked by relevance, annotated with status + tailored state. Roles the
+ * scan marked closed are hidden unless you've applied to them.
+ */
 function rolesPayload(s = store.load()) {
   const refined = tailored.refinedIds();
-  const roleList = Object.values(s.roles || {});
+  const roleList = Object.values(s.roles || {}).filter((r) => !r.closedAt || (s.apps || {})[r.id]);
   const ranked = rankRoles(roleList);
   return ranked.map((r) => {
     const app = (s.apps || {})[r.id] || {};
@@ -108,6 +111,7 @@ function rolesPayload(s = store.load()) {
       status: app.status || 'saved', tailored: isTailored, coverage,
       pdf: isTailored && tailored.hasPdf(r.id),
       triage: r.triage || null, tier: r.tier || null, posted: r.posted || null, firstSeen: r.firstSeen || null,
+      closed: Boolean(r.closedAt),
     };
   });
 }
