@@ -33,11 +33,14 @@ const { writeResumePdf } = require('../../lib/pdf');
 const { scoreBullet } = require('../../lib/xyz');
 const { renderApp } = require('../../lib/webapp');
 const claudeSource = require('../../lib/sources/claude');
+const profileLib = require('../../lib/profile');
+const watchlist = require('../../lib/watchlist');
+const { runScan } = require('../../lib/scan');
 
 /**
  * Selectable search sources for the webapp — only the ones that need NO API key.
  *   claude  — Claude Code subscription web search (two-phase file handoff)
- *   greenhouse / lever / ashby — official public ATS board APIs, fetched live
+ *   greenhouse / lever / ashby / smartrecruiters / workable — official public ATS board APIs, fetched live
  * (adzuna/linkedin need keys, so they are not offered in the browser.)
  */
 const SEARCH_SOURCES = {
@@ -45,6 +48,8 @@ const SEARCH_SOURCES = {
   greenhouse: { label: 'Greenhouse boards', kind: 'live', module: require('../../lib/sources/greenhouse') },
   lever: { label: 'Lever boards', kind: 'live', module: require('../../lib/sources/lever') },
   ashby: { label: 'Ashby boards', kind: 'live', module: require('../../lib/sources/ashby') },
+  smartrecruiters: { label: 'SmartRecruiters boards', kind: 'live', module: require('../../lib/sources/smartrecruiters') },
+  workable: { label: 'Workable boards', kind: 'live', module: require('../../lib/sources/workable') },
 };
 
 /** Same per-bullet transform the customizer uses: replace weak bullets with their XYZ rewrite. */
@@ -102,6 +107,7 @@ function rolesPayload(s = store.load()) {
       url: r.url || '', relevance: r.relevance,
       status: app.status || 'saved', tailored: isTailored, coverage,
       pdf: isTailored && tailored.hasPdf(r.id),
+      triage: r.triage || null, tier: r.tier || null, posted: r.posted || null, firstSeen: r.firstSeen || null,
     };
   });
 }
@@ -166,6 +172,14 @@ async function runSearch(body = {}) {
     if (err.code === 'NO_BOARDS') { err.status = 400; }
     throw err;
   });
+}
+
+/** Run the watchlist scan (same as `npm run scan`) and save; returns the run summary. */
+async function scanWatchlist() {
+  const s = store.load();
+  const sum = await runScan({ profile: profileLib.load(), wl: watchlist.load(), store: s });
+  store.save(s);
+  return sum;
 }
 
 /** The no-key sources the webapp offers, for the source dropdown. */
@@ -284,6 +298,14 @@ function createServer() {
         const body = await readBody(req);
         const out = await runSearch(body);
         sendJson(res, 200, out); return;
+      }
+      if (req.method === 'POST' && p === '/api/scan') {
+        sendJson(res, 200, await scanWatchlist()); return;
+      }
+      if (req.method === 'GET' && p === '/api/scan/last') {
+        const scans = (store.load().meta || {}).scans || [];
+        sendJson(res, 200, { last: scans[scans.length - 1] || null, coverage: watchlist.coverage(watchlist.load()) });
+        return;
       }
       if (req.method === 'POST' && p === '/api/tailor') {
         const body = await readBody(req);

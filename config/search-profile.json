@@ -1,0 +1,33 @@
+{
+  "_comment": "What the daily watchlist scan looks for. Titles are phrases matched inside the normalized job title (case, punctuation and 'pre-sales'/'presales' spelling don't matter). A title containing any excludeTitleWords word is dropped. Locations: a role matches if its location contains a listed place phrase or one of its state codes (e.g. 'Cambridge, MA'), or is remote within the country when allowRemote is true. maxYearsRequired drops roles whose JD asks for more years than this (e.g. 4 drops '5+ years'); null turns it off. maxAgeDays: a role first seen on an already-watched board counts as New only if posted within this many days.",
+  "titles": [
+    "sales engineer",
+    "solutions engineer",
+    "solution engineer",
+    "solutions consultant",
+    "solution consultant",
+    "presales engineer",
+    "presales consultant",
+    "customer engineer",
+    "applications engineer",
+    "application engineer",
+    "technical sales engineer",
+    "field application engineer",
+    "field applications engineer"
+  ],
+  "excludeTitleWords": [
+    "senior", "sr", "staff", "principal", "lead", "manager", "director", "head",
+    "vp", "vice", "president", "chief", "intern", "internship", "apprentice",
+    "contract", "contractor", "temporary"
+  ],
+  "locations": [
+    { "query": "Boston", "states": ["MA"] },
+    { "query": "Massachusetts" },
+    { "query": "New York", "states": ["NY"] },
+    { "query": "NYC" }
+  ],
+  "allowRemote": true,
+  "country": "us",
+  "maxYearsRequired": 4,
+  "maxAgeDays": 7
+}

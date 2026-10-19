@@ -1,7 +1,6 @@
 {
   "_comment": "Seed list of company Lever tokens for the lever source. The token is the slug in a board URL: https://jobs.lever.co/<token> (or api.lever.co/v0/postings/<token>?mode=json). Add any company whose careers page is on Lever. Override with LEVER_COMPANIES=\"tok1,tok2\" or a data/lever-companies.json file. Unknown tokens 404 and are skipped.",
   "boards": [
-    { "token": "jobgether", "name": "Jobgether" },
     { "token": "thinkahead", "name": "AHEAD" },
     { "token": "sambatv", "name": "Samba TV" },
     { "token": "azul", "name": "Azul" },

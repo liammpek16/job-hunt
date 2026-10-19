@@ -55,5 +55,16 @@ Each build target is a discrete skill (or, for the last two, a tracked outcome).
 
 ## Status
 
-Scoped; build not yet started. The **resume reviewer skill (goal 1)** is first, and its XYZ
-scorer is the reusable core that goals 3–4 inherit.
+**Revamp in progress** on the approved v4 plan (`docs/plan-v4-council.md`, on the
+`docs/revamp-plan` branch): jobs come only from employers' own ATS boards, no LinkedIn
+scraping, and a tiered company watchlist is the search.
+
+**M0 (watchlist scan)** is built, see `skills/scan/SKILL.md`:
+- `config/search-profile.json`: titles, exclude words, locations, max years required.
+- `config/companies.json`: tiered watchlist + blocklist; `npm run detect` finds each
+  company's Greenhouse / Ashby / Lever / SmartRecruiters / Workable board.
+- `npm run scan`: daily scan (`scripts/register-daily-scan.ps1` registers 7am), roles saved as
+  `new` or `backlog`.
+
+The original skills (reviewer, customizer, ATS scanner, dashboard) still work; M1–M3 replace
+the dashboard, tailoring and tracking.

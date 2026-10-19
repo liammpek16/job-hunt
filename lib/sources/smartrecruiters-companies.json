@@ -1,0 +1,13 @@
+{
+  "_comment": "Seed list of SmartRecruiters company identifiers for the smartrecruiters source (the segment in https://jobs.smartrecruiters.com/<identifier>). Override with SMARTRECRUITERS_COMPANIES=\"id1,id2\" or data/smartrecruiters-companies.json. The watchlist scan uses config/companies.json instead.",
+  "boards": [
+    {
+      "token": "ServiceNow",
+      "name": "ServiceNow"
+    },
+    {
+      "token": "Canva",
+      "name": "Canva"
+    }
+  ]
+}

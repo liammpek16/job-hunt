@@ -6,9 +6,9 @@ const store = require('../lib/store');
 
 function iso(d) { return new Date(Date.now() - d * 24 * 3600 * 1000).toISOString(); }
 
-test('searchSources lists the four no-key sources with kinds', () => {
+test('searchSources lists the six no-key sources with kinds', () => {
   const names = dash.searchSources().map((s) => s.name);
-  assert.deepStrictEqual(names.sort(), ['ashby', 'claude', 'greenhouse', 'lever']);
+  assert.deepStrictEqual(names.sort(), ['ashby', 'claude', 'greenhouse', 'lever', 'smartrecruiters', 'workable']);
   const byName = Object.fromEntries(dash.searchSources().map((s) => [s.name, s]));
   assert.strictEqual(byName.claude.kind, 'handoff');
   assert.strictEqual(byName.greenhouse.kind, 'live');
