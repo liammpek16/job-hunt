@@ -3,8 +3,8 @@
     Launch the Job Hunt dashboard as a local web server.
 
 .DESCRIPTION
-    Serves the live pipeline dashboard (jobs applied to / interviews) from the shared
-    store (data/jobs.json) at http://127.0.0.1:<port>. This is what the Admin Brain HUD's
+    Serves the Job Hunt dashboard (Jobs + Companies tabs) from data/jobhunt.db at
+    http://127.0.0.1:<port>. This is what the Admin Brain HUD's
     "webapp" button launches for the Job Hunt project — the analogue of run-webapp.ps1 for
     Dota Coach. Runs from the repo root regardless of the current directory. Ctrl-C to stop.
 

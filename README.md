@@ -59,12 +59,21 @@ Each build target is a discrete skill (or, for the last two, a tracked outcome).
 `docs/revamp-plan` branch): jobs come only from employers' own ATS boards, no LinkedIn
 scraping, and a tiered company watchlist is the search.
 
-**M0 (watchlist scan)** is built, see `skills/scan/SKILL.md`:
-- `config/search-profile.json`: titles, exclude words, locations, max years required.
-- `config/companies.json`: tiered watchlist + blocklist; `npm run detect` finds each
-  company's Greenhouse / Ashby / Lever / SmartRecruiters / Workable board.
-- `npm run scan`: daily scan (`scripts/register-daily-scan.ps1` registers 7am), roles saved as
-  `new` or `backlog`.
+Everything lives in one SQLite file, `data/jobhunt.db` (jobs, companies, status events,
+scan history). First time on a machine: `npm run migrate`.
 
-The original skills (reviewer, customizer, ATS scanner, dashboard) still work; M1–M3 replace
-the dashboard, tailoring and tracking.
+**M0 (watchlist scan)**, see `skills/scan/SKILL.md`:
+- `config/search-profile.json`: titles, exclude words, locations, max years required.
+- Watchlist: the companies table, seeded from `config/companies.seed.json`; `npm run detect`
+  finds each company's Greenhouse / Ashby / Lever / SmartRecruiters (/ Workable) board.
+- `npm run scan`: daily scan (`scripts/register-daily-scan.ps1` registers 7am). Jobs arrive
+  as `new` or `backlog` and are closed when they leave their board.
+
+**M1 (dashboard)**, see `skills/dashboard/SKILL.md`: `.un-dashboard.ps1` →
+http://127.0.0.1:4188. Jobs tab (keyboard triage, pipeline, Applied with JD snapshot +
+follow-up + undo), Companies tab (paste-a-link intake with coverage %, add a company, tiers),
+health bar.
+
+Retired in M1: the Claude web-search, Adzuna and LinkedIn sources, the title searcher, the
+static `dashboard.html`, relevance ranking, `data/jobs.json` and `Job_Applications.xlsx`
+(both migrated). The reviewer, customizer and ATS scanner skills still work until M2.

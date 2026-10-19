@@ -16,7 +16,7 @@ const path = require('path');
 const { scanResume, formatScan, atsCleanBullet } = require('../../lib/ats');
 const { writeResumeDocx } = require('../../lib/docx');
 const { writeResumePdf } = require('../../lib/pdf');
-const store = require('../../lib/store');
+const store = require('../../lib/db');
 
 function parseArgs(argv) {
   const a = { resume: null, jd: null, role: null, json: false, out: null, docx: null, pdf: null };
@@ -36,9 +36,8 @@ function parseArgs(argv) {
 function resolveJdText(args) {
   if (args.jd) return fs.readFileSync(path.resolve(args.jd), 'utf8');
   if (args.role) {
-    const s = store.load();
-    const role = s.roles[args.role];
-    if (!role) throw new Error(`No role "${args.role}" in the store.`);
+    const role = store.getJob(store.open(), args.role);
+    if (!role) throw new Error(`No job "${args.role}" in the store.`);
     return `${role.title}\n${role.description || ''}`;
   }
   return null; // JD is optional; without it, keyword checks are skipped.
