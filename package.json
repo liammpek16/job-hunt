@@ -2,17 +2,17 @@
   "name": "job-hunt",
   "version": "0.1.0",
   "private": true,
-  "description": "Job Hunt / Recruiter Helper — resume review, job search, tailoring, ATS scan, dashboard.",
+  "description": "Job Hunt — watchlist scan of company ATS boards, triage dashboard, resume tailoring, application tracking.",
   "type": "commonjs",
   "scripts": {
     "review": "node skills/reviewer/reviewer.js",
-    "search": "node skills/searcher/searcher.js",
     "customize": "node skills/customizer/customizer.js",
     "ats": "node skills/ats/ats.js",
     "dashboard": "node skills/dashboard/dashboard.js",
     "test": "node --test",
     "scan": "node skills/scan/scan.js",
-    "detect": "node skills/scan/detect.js"
+    "detect": "node skills/scan/detect.js",
+    "migrate": "node scripts/migrate-to-sqlite.js"
   },
   "license": "UNLICENSED",
   "dependencies": {

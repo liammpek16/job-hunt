@@ -25,7 +25,7 @@ node skills/customizer/customizer.js --resume resume.md --jd job.txt --docx tail
 node skills/customizer/customizer.js --resume resume.md --jd job.txt --pdf tailored.pdf
 ```
 
-`--role` pulls the JD from a saved role in `data/jobs.json` (from the searcher), so the whole
+`--role` pulls the JD from a job in `data/jobhunt.db` (from the watchlist scan), so the whole
 pipeline — search → tailor — shares one store.
 
 `--docx <out.docx>` writes a **new** tailored-resume Word file: weak bullets replaced by their

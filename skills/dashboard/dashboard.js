@@ -1,56 +1,168 @@
 #!/usr/bin/env node
 'use strict';
 /**
- * dashboard.js — goal 6: track jobs applied to / interviews and render a dashboard, plus the
- * live webapp that fronts the whole search→tailor loop for the Admin Brain HUD.
+ * dashboard.js — the Job Hunt webapp (M1): Jobs and Companies tabs over data/jobhunt.db.
  *
- * Reads the shared store (data/jobs.json). By default it renders a self-contained static HTML
- * dashboard (funnel + stat tiles + per-role table) and prints a terminal summary. With --serve
- * it runs the INTERACTIVE webapp (lib/webapp.js) + a small JSON API that powers:
- *   • a search button that runs the searcher on the Claude Code subscription (file handoff),
- *   • a relevance-ranked, column-sortable list of every surfaced role,
- *   • a per-role "refine résumé" button (in-process tailoring, $0), and
- *   • a preview of each refined role's tailoring report.
+ *   Jobs       New / Backlog triage (keyboard), Pipeline (interested → offer), Closed; match
+ *              chips; Applied button (date, JD snapshot, resume, follow-up) with undo.
+ *   Companies  the watchlist (tier, ATS, open matches, 30-day openings), add a company,
+ *              paste-a-link intake with coverage %.
+ *   Health bar last scan, the daily task, coverage.
+ *
+ * Local only (127.0.0.1). The Admin-Brain HUD button launches it via run-dashboard.ps1.
  *
  * Usage:
- *   node skills/dashboard/dashboard.js                       # render dashboard.html + summary
- *   node skills/dashboard/dashboard.js --out board.html      # custom output path
- *   node skills/dashboard/dashboard.js --json                # print aggregate JSON
- *   node skills/dashboard/dashboard.js --apply <id>          # mark a role applied
- *   node skills/dashboard/dashboard.js --status <id> <status># set status (saved..rejected)
- *   node skills/dashboard/dashboard.js --interview <id> [--kind "phone screen"] [--notes "..."]
- *   node skills/dashboard/dashboard.js --serve [--port 4188]   # live webapp for the HUD button
+ *   node skills/dashboard/dashboard.js [--port 4188]
  */
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const store = require('../../lib/store');
-const { aggregate, renderHtml, renderTerminal } = require('../../lib/dashboard');
-const { rankRoles } = require('../../lib/relevance');
+const { execFile } = require('child_process');
+const store = require('../../lib/db');
+const profileLib = require('../../lib/profile');
+const watchlist = require('../../lib/watchlist');
+const { runScan } = require('../../lib/scan');
+const { intake, addCompany, intakeStats } = require('../../lib/intake');
 const tailored = require('../../lib/tailored');
 const { tailorResume, formatTailorReport } = require('../../lib/tailor');
 const { writeResumePdf } = require('../../lib/pdf');
 const { scoreBullet } = require('../../lib/xyz');
 const { renderApp } = require('../../lib/webapp');
-const claudeSource = require('../../lib/sources/claude');
-const profileLib = require('../../lib/profile');
-const watchlist = require('../../lib/watchlist');
-const { runScan } = require('../../lib/scan');
 
-/**
- * Selectable search sources for the webapp — only the ones that need NO API key.
- *   claude  — Claude Code subscription web search (two-phase file handoff)
- *   greenhouse / lever / ashby / smartrecruiters / workable — official public ATS board APIs, fetched live
- * (adzuna/linkedin need keys, so they are not offered in the browser.)
- */
-const SEARCH_SOURCES = {
-  claude: { label: 'Claude web search', kind: 'handoff', module: claudeSource },
-  greenhouse: { label: 'Greenhouse boards', kind: 'live', module: require('../../lib/sources/greenhouse') },
-  lever: { label: 'Lever boards', kind: 'live', module: require('../../lib/sources/lever') },
-  ashby: { label: 'Ashby boards', kind: 'live', module: require('../../lib/sources/ashby') },
-  smartrecruiters: { label: 'SmartRecruiters boards', kind: 'live', module: require('../../lib/sources/smartrecruiters') },
-  workable: { label: 'Workable boards', kind: 'live', module: require('../../lib/sources/workable') },
+const DEFAULT_PORT = 4188;
+const REPO_ROOT = path.join(__dirname, '..', '..');
+const RESUMES_DIR = path.join(REPO_ROOT, 'Resumes');
+const DEFAULT_RESUME = process.env.JOB_HUNT_RESUME || path.join(REPO_ROOT, 'samples', 'sample-resume.md');
+const TASK_NAME = 'JobHunt Daily Scan';
+const STATUS_ORDER = Object.fromEntries(store.STATUSES.map((s, i) => [s, i]));
+
+function parseArgs(argv) {
+  const a = { port: DEFAULT_PORT };
+  for (let i = 0; i < argv.length; i++) if (argv[i] === '--port') a.port = Number(argv[++i]);
+  return a;
+}
+
+/* ------------------------------- payloads ----------------------------------- */
+
+function lastActivity(db) {
+  const rows = db.prepare('SELECT job_id, MAX(at) AS at FROM events WHERE job_id IS NOT NULL GROUP BY job_id').all();
+  return Object.fromEntries(rows.map((r) => [r.job_id, r.at]));
+}
+
+function linkedinSearch(job, chips) {
+  const q = `${job.company || ''} ${chips.title || 'sales engineer'}`.trim();
+  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(q)}`;
+}
+
+function shapeJob(job, profile, last, refined) {
+  const chips = profileLib.explain(job, profile);
+  return {
+    id: job.id, title: job.title, company: job.company, location: job.location, url: job.url,
+    tier: job.tier, ats: job.ats || job.source, status: job.status, view: store.viewOf(job),
+    posted: job.posted, firstSeen: job.firstSeen, closed: Boolean(job.closedAt), closedAt: job.closedAt,
+    appliedAt: job.appliedAt, resume: job.resume, followUpAt: job.followUpAt,
+    lastUpdate: last[job.id] || job.updatedAt || job.firstSeen,
+    salaryMin: job.salaryMin, salaryMax: job.salaryMax,
+    chips, linkedin: linkedinSearch(job, chips),
+    tailored: tailored.isRefined(job.id, refined), pdf: tailored.hasPdf(job.id),
+  };
+}
+
+const TIER = watchlist.TIER_RANK;
+const time = (s) => (s ? Date.parse(s) || 0 : 0);
+const SORTERS = {
+  // triage: best tier first, then newest posting
+  new: (a, b) => (TIER[a.tier] ?? 3) - (TIER[b.tier] ?? 3) || time(b.posted || b.firstSeen) - time(a.posted || a.firstSeen),
+  pipeline: (a, b) => STATUS_ORDER[b.status] - STATUS_ORDER[a.status] || time(b.lastUpdate) - time(a.lastUpdate),
+  closed: (a, b) => time(b.lastUpdate) - time(a.lastUpdate),
 };
+SORTERS.backlog = SORTERS.new;
+
+function jobsPayload(db, profile, view = 'new') {
+  if (!SORTERS[view]) { const e = new Error(`Unknown view "${view}".`); e.status = 400; throw e; }
+  const last = lastActivity(db);
+  const refined = tailored.refinedIds();
+  return store.allJobs(db).filter((j) => store.viewOf(j) === view)
+    .map((j) => shapeJob(j, profile, last, refined)).sort(SORTERS[view]);
+}
+
+function jobDetail(db, profile, id) {
+  const job = store.getJob(db, id);
+  if (!job) { const e = new Error(`No job "${id}".`); e.status = 404; throw e; }
+  return { ...shapeJob(job, profile, lastActivity(db), tailored.refinedIds()),
+    description: job.description, jdSnapshot: job.jdSnapshot, events: store.events(db, { jobId: id, limit: 50 }) };
+}
+
+function companiesPayload(db) {
+  const wl = store.loadWatchlist(db);
+  const lastScanned = store.getMeta(db, 'boardsLastScanned', {});
+  const jobs = store.allJobs(db);
+  const monthAgo = Date.now() - 30 * 864e5;
+  const companies = wl.companies.map((c) => {
+    const mine = jobs.filter((j) => watchlist.norm(j.company) === watchlist.norm(c.name));
+    const open = mine.filter((j) => !j.closedAt && !store.TERMINAL.includes(j.status));
+    return {
+      ...c,
+      covered: watchlist.ATS_NAMES.includes(c.ats) && Boolean(c.slug),
+      blocked: watchlist.isBlocked(c.name, wl),
+      openMatches: open.length,
+      opened30: mine.filter((j) => time(j.firstSeen) >= monthAgo && j.source !== 'manual').length,
+      lastScanned: c.slug ? lastScanned[`${c.ats}:${c.slug}`] || null : null,
+    };
+  });
+  return { companies, coverage: watchlist.coverage(wl), intake: intakeStats(db), blocklist: wl.blocklist };
+}
+
+function listResumes() {
+  const out = [];
+  for (const [dir, label] of [[RESUMES_DIR, 'Resumes'], [REPO_ROOT, '']]) {
+    let files = [];
+    try { files = fs.readdirSync(dir); } catch { continue; }
+    for (const f of files) {
+      if (!/\.(docx|pdf)$/i.test(f) || (!label && !/resume/i.test(f))) continue;
+      out.push(label ? `${label}/${f}` : f);
+    }
+  }
+  return out.sort();
+}
+
+/* --------------------------------- health ----------------------------------- */
+
+let taskCache = { at: 0, value: null };
+
+/** The daily scan's Windows scheduled task: { registered, nextRun, lastRun, lastResult }. */
+function scheduledTask() {
+  if (process.platform !== 'win32') return Promise.resolve({ registered: false, note: 'not Windows' });
+  if (Date.now() - taskCache.at < 60e3 && taskCache.value) return Promise.resolve(taskCache.value);
+  return new Promise((resolve) => {
+    execFile('schtasks', ['/Query', '/TN', TASK_NAME, '/V', '/FO', 'LIST'], { windowsHide: true, timeout: 10e3 }, (err, stdout) => {
+      let value = { registered: false };
+      if (!err) {
+        const field = (k) => { const m = stdout.match(new RegExp(`^${k}:\\s*(.+)$`, 'mi')); return m ? m[1].trim() : null; };
+        value = { registered: true, nextRun: field('Next Run Time'), lastRun: field('Last Run Time'), lastResult: field('Last Result') };
+      }
+      taskCache = { at: Date.now(), value };
+      resolve(value);
+    });
+  });
+}
+
+async function healthPayload(db, getTask = scheduledTask) {
+  const scans = store.getMeta(db, 'scans', []);
+  const last = scans[scans.length - 1] || null;
+  const fullScans = scans.filter((s) => !s.only);
+  const lastFull = fullScans[fullScans.length - 1] || null;
+  return {
+    lastScan: last, lastFullScan: lastFull,
+    scanAgeHours: lastFull ? Math.round((Date.now() - time(lastFull.at)) / 36e5) : null,
+    task: await getTask(),
+    coverage: watchlist.coverage(store.loadWatchlist(db)),
+    intake: intakeStats(db),
+    counts: store.counts(db),
+  };
+}
+
+/* ------------------------------ résumé refine ------------------------------- */
 
 /** Same per-bullet transform the customizer uses: replace weak bullets with their XYZ rewrite. */
 function improveBullet(text) {
@@ -58,180 +170,30 @@ function improveBullet(text) {
   return b.score === 3 ? text : (b.rewrite || text);
 }
 
-const DEFAULT_PORT = 4188;
-const REPO_ROOT = path.join(__dirname, '..', '..');
-const DEFAULT_RESUME = process.env.JOB_HUNT_RESUME || path.join(REPO_ROOT, 'samples', 'sample-resume.md');
-const SEARCH_TARGET = 100;
-
-function parseArgs(argv) {
-  const a = { out: null, json: false, apply: null, status: null, statusVal: null,
-    interview: null, kind: 'interview', notes: '', serve: false, port: DEFAULT_PORT };
-  for (let i = 0; i < argv.length; i++) {
-    const k = argv[i];
-    if (k === '--out') a.out = argv[++i];
-    else if (k === '--json') a.json = true;
-    else if (k === '--apply') a.apply = argv[++i];
-    else if (k === '--status') { a.status = argv[++i]; a.statusVal = argv[++i]; }
-    else if (k === '--interview') a.interview = argv[++i];
-    else if (k === '--kind') a.kind = argv[++i];
-    else if (k === '--notes') a.notes = argv[++i];
-    else if (k === '--serve') a.serve = true;
-    else if (k === '--port') a.port = Number(argv[++i]);
-  }
-  return a;
-}
-
-/** Render the static pipeline board from the CURRENT store on disk (fresh each call). */
-function renderLiveHtml() {
-  return renderHtml(aggregate(store.load()));
-}
-
-/* ------------------------------- API helpers -------------------------------- */
-
 /**
- * Every surfaced role, ranked by relevance, annotated with status + tailored state. Roles the
- * scan marked closed are hidden unless you've applied to them.
+ * Tailor the resume to one job's JD: a Markdown report and a tailored-resume PDF the row can
+ * preview. (M2 replaces this with in-place .docx tailoring.) The original resume is untouched.
  */
-function rolesPayload(s = store.load()) {
-  const refined = tailored.refinedIds();
-  const roleList = Object.values(s.roles || {}).filter((r) => !r.closedAt || (s.apps || {})[r.id]);
-  const ranked = rankRoles(roleList);
-  return ranked.map((r) => {
-    const app = (s.apps || {})[r.id] || {};
-    const isTailored = tailored.isRefined(r.id, refined);
-    let coverage = null;
-    if (isTailored) {
-      const rec = tailored.load(r.id);
-      coverage = rec && rec.meta ? (rec.meta.coverage ?? null) : null;
-    }
-    return {
-      id: r.id, title: r.title, company: r.company, location: r.location,
-      salaryMin: r.salaryMin ?? null, salaryMax: r.salaryMax ?? null,
-      url: r.url || '', relevance: r.relevance,
-      status: app.status || 'saved', tailored: isTailored, coverage,
-      pdf: isTailored && tailored.hasPdf(r.id),
-      triage: r.triage || null, tier: r.tier || null, posted: r.posted || null, firstSeen: r.firstSeen || null,
-      closed: Boolean(r.closedAt),
-    };
-  });
-}
-
-const SEARCH_SINCE_DAYS = 7; // only surface postings from the last week
-
-/** Ingest a source result into the store and shape the ingested / no_new response. */
-function ingestResult(result, params, sourceName) {
-  const s = store.load();
-  const { added, skipped } = store.addRoles(s, result.roles);
-  store.save(s);
-  const sinceDays = result.sinceDays ?? params.sinceDays;
-  const common = {
-    source: sourceName, added, skipped, sinceDays,
-    total: result.total ?? result.roles.length,
-    recent: result.recent ?? result.roles.length,
-    stale: result.stale ?? 0,
-  };
-  if (added === 0) {
-    const reason = common.recent === 0
-      ? `No job postings from the last ${sinceDays} days came back for these criteria.`
-      : `The ${common.recent} recent posting(s) found are already in your list.`;
-    const widen = sourceName === 'claude'
-      ? 'Expand your search — broaden the title or location, or lower the minimum salary — then run it again.'
-      : `Try a wider "posted within" window, broaden the title/location, or add companies to the ${sourceName} board list.`;
-    return { status: 'no_new', ...common, message: `${reason} ${widen}` };
-  }
-  return { status: 'ingested', ...common };
-}
-
-/**
- * Run a job search on a selected no-key source and ingest the results.
- *   • claude — two-phase file handoff (returns a handoff prompt on the first run).
- *   • greenhouse / lever / ashby — fetched live from the official board APIs.
- */
-async function runSearch(body = {}) {
-  const sourceName = String(body.source || 'claude').toLowerCase();
-  const src = SEARCH_SOURCES[sourceName];
-  if (!src) { const e = new Error(`Unknown search source "${sourceName}".`); e.status = 400; throw e; }
-
-  const params = {
-    title: String(body.title || '').trim(),
-    location: String(body.location || '').trim(),
-    salaryMin: body.salaryMin != null && body.salaryMin !== '' ? Number(body.salaryMin) : null,
-    salaryMax: body.salaryMax != null && body.salaryMax !== '' ? Number(body.salaryMax) : null,
-    country: body.country || 'us',
-    sinceDays: body.sinceDays != null && body.sinceDays !== '' ? Number(body.sinceDays) : SEARCH_SINCE_DAYS,
-  };
-  if (!params.title) { const e = new Error('A job title is required.'); e.status = 400; throw e; }
-
-  return src.module.fetchRoles(params, SEARCH_TARGET).then((result) => {
-    const out = ingestResult(result, params, sourceName);
-    // Claude's handoff caches a results file; consume it so the next run re-searches.
-    if (src.kind === 'handoff') claudeSource.archiveResults(params);
-    // Surface board-fetch errors (e.g. a 404 board) without failing the whole search.
-    if (Array.isArray(result.errors) && result.errors.length) out.sourceErrors = result.errors.length;
-    return out;
-  }).catch((err) => {
-    if (err.code === 'HANDOFF_PENDING') {
-      return { status: 'handoff', source: sourceName, prompt: err.prompt, requestFile: err.requestFile, resultsFile: err.resultsFile };
-    }
-    if (err.code === 'NO_BOARDS') { err.status = 400; }
-    throw err;
-  });
-}
-
-/** Run the watchlist scan (same as `npm run scan`) and save; returns the run summary. */
-async function scanWatchlist() {
-  const s = store.load();
-  const sum = await runScan({ profile: profileLib.load(), wl: watchlist.load(), store: s });
-  store.save(s);
-  return sum;
-}
-
-/** The no-key sources the webapp offers, for the source dropdown. */
-function searchSources() {
-  return Object.entries(SEARCH_SOURCES).map(([name, s]) => ({ name, label: s.label, kind: s.kind }));
-}
-
-/**
- * Tailor the resume to one role's JD: persist the Markdown report AND generate a NEW
- * tailored-resume .pdf (weak bullets → XYZ rewrites, ATS-safe/accent-stripped), so the row
- * can preview it. Async because the PDF writer streams to disk. The original resume is
- * never modified.
- */
-async function refineRole(id) {
-  const s = store.load();
-  const role = (s.roles || {})[id];
-  if (!role) { const e = new Error(`No role "${id}" in the store.`); e.status = 404; throw e; }
+async function refineRole(db, id) {
+  const role = store.getJob(db, id);
+  if (!role) { const e = new Error(`No job "${id}".`); e.status = 404; throw e; }
   let resumeText;
   try { resumeText = fs.readFileSync(DEFAULT_RESUME, 'utf8'); }
   catch { const e = new Error(`Resume not found at ${DEFAULT_RESUME} (set JOB_HUNT_RESUME).`); e.status = 500; throw e; }
-  const jdText = `${role.title}\n${role.description || ''}`;
   const jdLabel = `${role.title}${role.company ? ' @ ' + role.company : ''}`;
-  const report = tailorResume(resumeText, jdText);
-  const markdown = formatTailorReport(report, jdLabel);
+  const report = tailorResume(resumeText, `${role.title}\n${role.description || ''}`);
   const summary = {
-    coverage: report.coverage.pct,
-    present: report.coverage.present.length,
-    total: report.coverage.total,
-    fullXYZ: report.xyz.fullXYZ,
-    totalBullets: report.xyz.totalBullets,
-    weak: report.weakBullets.length,
+    coverage: report.coverage.pct, present: report.coverage.present.length, total: report.coverage.total,
+    fullXYZ: report.xyz.fullXYZ, totalBullets: report.xyz.totalBullets, weak: report.weakBullets.length,
   };
-  tailored.save(id, markdown, summary);
-
-  // Generate the tailored-resume PDF alongside the report (same transform + note as the
-  // customizer's --pdf), so the "Preview PDF" button has a real, ATS-safe file to show.
+  tailored.save(id, formatTailorReport(report, jdLabel), summary);
   const missing = report.coverage.missing.map((k) => k.term).slice(0, 15).join(', ');
   const note = `Tailored for ${jdLabel}. Weave these missing JD keywords in where truthful: `
     + `${missing || '(none — good coverage)'}. Weak bullets carry XYZ rewrite scaffolds — `
     + 'fill the [bracketed] placeholders. Original resume unchanged; review before sending.';
   let pdf = false;
-  try {
-    await writeResumePdf(resumeText, improveBullet, tailored.pdfPath(id), note);
-    pdf = true;
-  } catch (e) {
-    // A PDF failure must not fail the refine — the Markdown report is the primary artifact.
-    console.error(`PDF generation failed for ${id}: ${e.message}`);
-  }
+  try { await writeResumePdf(resumeText, improveBullet, tailored.pdfPath(id), note); pdf = true; }
+  catch (e) { console.error(`PDF generation failed for ${id}: ${e.message}`); }
   return { id, ...summary, pdf };
 }
 
@@ -246,75 +208,88 @@ function readBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
     req.on('data', (c) => { data += c; if (data.length > 1e6) { reject(new Error('Body too large')); req.destroy(); } });
-    req.on('end', () => { try { resolve(data ? JSON.parse(data) : {}); } catch (e) { reject(new Error('Invalid JSON body')); } });
+    req.on('end', () => { try { resolve(data ? JSON.parse(data) : {}); } catch { reject(Object.assign(new Error('Invalid JSON body'), { status: 400 })); } });
     req.on('error', reject);
   });
 }
 
+const PIPELINE_MOVES = ['interested', 'dismissed', 'new', 'backlog', 'screening', 'interview', 'offer', 'rejected', 'withdrawn', 'ghosted'];
+
 /**
- * The webapp server: interactive page at /, static board at /board, and a JSON API. Re-reads
- * the store on every request. Bound to 127.0.0.1 by the caller (local only) — no shell exec;
- * search only writes a request spec + returns a prompt, tailoring runs in-process.
+ * opts (tests): { db, profile, getTask, scanDeps } — defaults open data/jobhunt.db and
+ * config/search-profile.json.
  */
-function createServer() {
+function createServer(opts = {}) {
+  const db = opts.db || store.open();
+  const profile = () => opts.profile || profileLib.load();
+  const scanDeps = opts.scanDeps || {};
+  let scanning = null;
+
   return http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
       const p = url.pathname;
+      const GET = req.method === 'GET';
+      const POST = req.method === 'POST';
 
       if (p === '/health') { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok'); return; }
-      if (req.method === 'GET' && p === '/') {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderApp()); return;
+      if (GET && p === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderApp()); return; }
+      if (GET && p === '/api/jobs') { sendJson(res, 200, { view: url.searchParams.get('view') || 'new', jobs: jobsPayload(db, profile(), url.searchParams.get('view') || 'new') }); return; }
+      if (GET && p === '/api/job') { sendJson(res, 200, jobDetail(db, profile(), url.searchParams.get('id') || '')); return; }
+      if (GET && p === '/api/counts') { sendJson(res, 200, store.counts(db)); return; }
+      if (GET && p === '/api/resumes') { sendJson(res, 200, { resumes: listResumes() }); return; }
+      if (GET && p === '/api/companies') { sendJson(res, 200, companiesPayload(db)); return; }
+      if (GET && p === '/api/health') { sendJson(res, 200, await healthPayload(db, opts.getTask)); return; }
+
+      if (POST && p === '/api/jobs/status') {
+        const b = await readBody(req);
+        if (!PIPELINE_MOVES.includes(b.status)) { sendJson(res, 400, { error: `Use the Applied button for "applied"; status must be one of ${PIPELINE_MOVES.join(', ')}.` }); return; }
+        sendJson(res, 200, { job: store.setStatus(db, String(b.id || ''), b.status) }); return;
       }
-      if (req.method === 'GET' && p === '/board') {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderLiveHtml()); return;
+      if (POST && p === '/api/jobs/applied') {
+        const b = await readBody(req);
+        sendJson(res, 200, { job: store.setStatus(db, String(b.id || ''), 'applied', { resume: b.resume || null }) }); return;
       }
-      if (req.method === 'GET' && p === '/api/overview') {
-        const agg = aggregate(store.load());
-        sendJson(res, 200, { totals: agg.totals, funnel: agg.funnel, refined: tailored.refinedIds().size });
-        return;
+      if (POST && p === '/api/jobs/undo') {
+        const b = await readBody(req);
+        sendJson(res, 200, { job: store.undo(db, String(b.id || '')) }); return;
       }
-      if (req.method === 'GET' && p === '/api/roles') {
-        sendJson(res, 200, { roles: rolesPayload() }); return;
+      if (POST && p === '/api/companies') {
+        const b = await readBody(req);
+        sendJson(res, 200, await addCompany(db, { name: b.name, tier: b.tier }, { profile: profile(), ...scanDeps })); return;
       }
-      if (req.method === 'GET' && p === '/api/sources') {
-        sendJson(res, 200, { sources: searchSources() }); return;
+      if (POST && p === '/api/companies/tier') {
+        const b = await readBody(req);
+        const c = store.listCompanies(db).find((x) => x.name === b.name);
+        if (!c) { sendJson(res, 404, { error: `No company "${b.name}".` }); return; }
+        if (!['A', 'B', 'C'].includes(b.tier)) { sendJson(res, 400, { error: 'Tier must be A, B or C.' }); return; }
+        store.upsertCompany(db, { ...c, tier: b.tier });
+        db.prepare('UPDATE jobs SET tier = ? WHERE company = ?').run(b.tier, c.name);
+        sendJson(res, 200, { ok: true }); return;
       }
-      if (req.method === 'GET' && p === '/api/tailored') {
+      if (POST && p === '/api/intake') {
+        const b = await readBody(req);
+        sendJson(res, 200, await intake(db, { url: b.url, company: b.company, tier: b.tier }, { profile: profile(), ...scanDeps })); return;
+      }
+      if (POST && p === '/api/scan') {
+        if (!scanning) scanning = runScan({ profile: profile(), db, ...scanDeps }).finally(() => { scanning = null; });
+        sendJson(res, 200, await scanning); return;
+      }
+      if (POST && p === '/api/tailor') {
+        const b = await readBody(req);
+        sendJson(res, 200, await refineRole(db, String(b.id || ''))); return;
+      }
+      if (GET && p === '/api/tailored') {
+        const rec = tailored.load(url.searchParams.get('id') || '');
+        if (!rec) { sendJson(res, 404, { error: 'No tailored résumé for that job yet.' }); return; }
+        sendJson(res, 200, { markdown: rec.markdown, meta: rec.meta }); return;
+      }
+      if (GET && p === '/api/tailored/pdf') {
         const id = url.searchParams.get('id') || '';
-        const rec = tailored.load(id);
-        if (!rec) { sendJson(res, 404, { error: 'No tailored résumé for that role yet.' }); return; }
-        sendJson(res, 200, { id, markdown: rec.markdown, meta: rec.meta }); return;
-      }
-      if (req.method === 'GET' && p === '/api/tailored/pdf') {
-        const id = url.searchParams.get('id') || '';
-        const file = tailored.pdfPath(id);
-        if (!id || !tailored.hasPdf(id)) { sendJson(res, 404, { error: 'No tailored résumé PDF for that role yet.' }); return; }
-        const inline = url.searchParams.get('download') ? 'attachment' : 'inline';
-        res.writeHead(200, {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `${inline}; filename="tailored-resume.pdf"`,
-        });
-        fs.createReadStream(file).pipe(res);
+        if (!id || !tailored.hasPdf(id)) { sendJson(res, 404, { error: 'No tailored résumé PDF for that job yet.' }); return; }
+        res.writeHead(200, { 'Content-Type': 'application/pdf', 'Content-Disposition': 'inline; filename="tailored-resume.pdf"' });
+        fs.createReadStream(tailored.pdfPath(id)).pipe(res);
         return;
-      }
-      if (req.method === 'POST' && p === '/api/search') {
-        const body = await readBody(req);
-        const out = await runSearch(body);
-        sendJson(res, 200, out); return;
-      }
-      if (req.method === 'POST' && p === '/api/scan') {
-        sendJson(res, 200, await scanWatchlist()); return;
-      }
-      if (req.method === 'GET' && p === '/api/scan/last') {
-        const scans = (store.load().meta || {}).scans || [];
-        sendJson(res, 200, { last: scans[scans.length - 1] || null, coverage: watchlist.coverage(watchlist.load()) });
-        return;
-      }
-      if (req.method === 'POST' && p === '/api/tailor') {
-        const body = await readBody(req);
-        const out = await refineRole(String(body.id || ''));
-        sendJson(res, 200, out); return;
       }
       sendJson(res, 404, { error: 'Not found' });
     } catch (e) {
@@ -325,37 +300,13 @@ function createServer() {
 
 function serve(port = DEFAULT_PORT) {
   const server = createServer();
-  server.listen(port, '127.0.0.1', () => {
-    console.log(`Job Hunt webapp live at http://127.0.0.1:${port}  (Ctrl-C to stop)`);
-  });
+  server.listen(port, '127.0.0.1', () => console.log(`Job Hunt dashboard at http://127.0.0.1:${port}  (Ctrl-C to stop)`));
   return server;
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const s = store.load();
-  let mutated = false;
+if (require.main === module) serve(parseArgs(process.argv.slice(2)).port);
 
-  if (args.apply) { store.setStatus(s, args.apply, 'applied'); mutated = true; }
-  if (args.status) { store.setStatus(s, args.status, args.statusVal); mutated = true; }
-  if (args.interview) { store.addInterview(s, args.interview, { kind: args.kind, notes: args.notes }); mutated = true; }
-  if (mutated) { store.save(s); console.error('Store updated.'); }
-
-  if (args.serve) { serve(args.port); return; } // long-running; the HUD button launches this
-
-  const agg = aggregate(s);
-  if (args.json) { process.stdout.write(JSON.stringify(agg, null, 2) + '\n'); return; }
-
-  const outPath = path.resolve(args.out || 'dashboard.html');
-  fs.writeFileSync(outPath, renderHtml(agg));
-  console.log(renderTerminal(agg));
-  console.log(`\nHTML dashboard → ${path.relative(process.cwd(), outPath)}`);
-}
-
-if (require.main === module) {
-  try { main(); } catch (e) { console.error(e.message); process.exit(1); }
-}
 module.exports = {
-  parseArgs, createServer, renderLiveHtml, serve, DEFAULT_PORT,
-  rolesPayload, runSearch, refineRole, searchSources, SEARCH_SOURCES,
+  parseArgs, createServer, serve, DEFAULT_PORT, jobsPayload, jobDetail, companiesPayload,
+  healthPayload, listResumes, refineRole, PIPELINE_MOVES,
 };

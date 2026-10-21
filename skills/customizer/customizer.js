@@ -23,7 +23,7 @@ const { tailorResume, formatTailorReport } = require('../../lib/tailor');
 const { scoreBullet } = require('../../lib/xyz');
 const { writeResumeDocx } = require('../../lib/docx');
 const { writeResumePdf } = require('../../lib/pdf');
-const store = require('../../lib/store');
+const store = require('../../lib/db');
 
 function parseArgs(argv) {
   const a = { resume: null, jd: null, role: null, json: false, out: null, docx: null, pdf: null };
@@ -43,9 +43,8 @@ function parseArgs(argv) {
 function resolveJd(args) {
   if (args.jd) return { text: fs.readFileSync(path.resolve(args.jd), 'utf8'), label: path.basename(args.jd) };
   if (args.role) {
-    const s = store.load();
-    const role = s.roles[args.role];
-    if (!role) throw new Error(`No role "${args.role}" in the store — run the searcher first.`);
+    const role = store.getJob(store.open(), args.role);
+    if (!role) throw new Error(`No job "${args.role}" in the store — run the scan first.`);
     return { text: `${role.title}\n${role.description || ''}`, label: `${role.title} @ ${role.company}` };
   }
   throw new Error('Provide a JD via --jd <file> or --role <id>.');

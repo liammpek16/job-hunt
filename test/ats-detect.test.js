@@ -36,7 +36,7 @@ test('detects a Greenhouse board whose name matches and has open jobs', async ()
     [GH('rescale')]: { status: 200, json: { name: 'Rescale' } },
     [GH('rescale') + '/jobs']: { status: 200, json: { jobs: [{}, {}] } },
   });
-  assert.deepEqual(await detectCompany({ name: 'Rescale' }, { http }), { ats: 'greenhouse', slug: 'rescale', jobs: 2 });
+  assert.deepEqual(await detectCompany({ name: 'Rescale' }, { http }), { ats: 'greenhouse', slug: 'rescale', jobs: 2, name: 'Rescale' });
 });
 
 test('rejects a board whose reported name is a different company', async () => {
@@ -70,7 +70,7 @@ test('SmartRecruiters uses the identifier it reports; unknown ids (200, empty) a
     [SR('ServiceNow')]: { status: 200, json: { totalFound: 409, content: [{ company: { identifier: 'ServiceNow', name: 'ServiceNow' } }] } },
   });
   const r = await detectCompany({ name: 'ServiceNow', slugs: ['ServiceNow'] }, { http });
-  assert.deepEqual(r, { ats: 'smartrecruiters', slug: 'ServiceNow', jobs: 409 });
+  assert.deepEqual(r, { ats: 'smartrecruiters', slug: 'ServiceNow', jobs: 409, name: 'ServiceNow' });
 });
 
 test('a rate-limited probe throws so the company is left unchecked, not marked none', async () => {
