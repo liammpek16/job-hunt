@@ -20,6 +20,21 @@ description: The Job Hunt webapp over data/jobhunt.db — triage new jobs from t
 - **Apply ↗** goes to the company's own posting. **Find on LinkedIn ↗** is a plain link to a
   LinkedIn people search for the company; you click it, nothing fetches LinkedIn.
 
+## Tailored resume (per job, under "Resume & details")
+- **Generate tailored resume** (optional note for Claude, e.g. "lead with customer-facing
+  work"). Runs in the background, 20–90 s, on your Claude Code subscription.
+- Only list bullets under Experience and Skills of the base resume (`config/resume.json`) are
+  rewritten, in place, so fonts, bullets and spacing match the original exactly.
+- Checks in code: a rewrite that adds a number not in your resume, or touches anything other
+  than an editable bullet, is **rejected** (shown in red). New capitalised terms (tools,
+  products), much longer bullets and overall growth are **warnings**: keep them only if true.
+- JD keyword coverage before → after (+ gained, − lost), a before/after diff of every changed
+  bullet, and a page preview with a page count (a PDF when LibreOffice is installed).
+- **Accept** makes it the job's resume (the Applied form then defaults to it, and a job still in
+  triage moves to Interested). **Regenerate** keeps every version; pick one from the list.
+  **Open in Word** / **Download .docx**.
+- Files: `Resumes/Pek_Liam_Resume_<Company>_<Title>.docx` (`_v2`, `_v3` for regenerations).
+
 ## Companies tab
 - **Paste a job link**: any posting you found elsewhere, LinkedIn included. The link is
   never opened. Its company and job id are read from the URL text, the company joins the

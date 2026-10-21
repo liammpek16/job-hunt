@@ -121,3 +121,61 @@ test('unknown routes and jobs are JSON errors', async () => {
     assert.equal((await s.get('/api/tailored?id=missing')).status, 404);
   } finally { await s.close(); }
 });
+
+test('resume: generate runs in the background, then accept + file download', async () => {
+  const fsx = require('fs');
+  const pathx = require('path');
+  const db = seed();
+  const dir = pathx.join(__dirname, '..', 'Resumes');
+  fsx.mkdirSync(dir, { recursive: true });
+  const file = pathx.join(dir, '_test_resume.docx');
+  fsx.writeFileSync(file, 'PK fake docx');
+  let release;
+  const gate = new Promise((r) => { release = r; });
+  const server = createServer({ db, profile, getTask: async () => ({ registered: false }), resumeDeps: {
+    generate: async (jobId, o) => { await gate; return store.addResume(db, { jobId, path: 'Resumes/_test_resume.docx', note: o.note, edits: [{ id: 'p4', before: 'a', after: 'b' }], atsBefore: 20, atsAfter: 30 }); },
+  } });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const post = (p, b) => fetch(base + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(async (r) => ({ status: r.status, body: await r.json() }));
+  const get = (p) => fetch(base + p).then(async (r) => ({ status: r.status, body: await r.json() }));
+  try {
+    const start = await post('/api/resume/generate', { id: 'a-new', note: 'lead with demos' });
+    assert.equal(start.status, 202);
+    assert.equal(start.body.task.state, 'running');
+    assert.equal((await post('/api/resume/generate', { id: 'nope' })).status, 404);
+    release();
+    let st;
+    for (let i = 0; i < 20; i++) { st = (await get('/api/resume?id=a-new')).body; if (st.task.state !== 'running') break; await new Promise((r) => setTimeout(r, 10)); }
+    assert.equal(st.task.state, 'done');
+    assert.equal(st.resumes.length, 1);
+    const rid = st.resumes[0].id;
+    const jobs = (await get('/api/jobs?view=new')).body.jobs;
+    assert.deepEqual(jobs.find((j) => j.id === 'a-new').latestResume, { id: rid, status: 'draft' });
+    const dl = await fetch(`${base}/api/resume/file?rid=${rid}&download=1`);
+    assert.equal(dl.status, 200);
+    assert.match(dl.headers.get('content-disposition'), /attachment; filename="_test_resume.docx"/);
+    assert.equal((await fetch(`${base}/api/resume/file?rid=${rid}&type=pdf`)).status, 404);
+    const acc = await post('/api/resume/accept', { rid });
+    assert.equal(acc.body.resume.status, 'accepted');
+    assert.equal(store.getJob(db, 'a-new').status, 'interested');
+    assert.equal((await fetch(base + '/vendor/docx-preview.min.js')).status, 200);
+  } finally {
+    await new Promise((r) => server.close(r));
+    fsx.rmSync(file, { force: true });
+  }
+});
+
+test('resume: a failed generation is reported, not thrown', async () => {
+  const db = seed();
+  const server = createServer({ db, profile, getTask: async () => ({}), resumeDeps: { generate: async () => { throw new Error('Claude Code failed (exit 1)'); } } });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    await fetch(base + '/api/resume/generate', { method: 'POST', body: JSON.stringify({ id: 'a-new' }) });
+    let st;
+    for (let i = 0; i < 20; i++) { st = await (await fetch(base + '/api/resume?id=a-new')).json(); if (st.task.state !== 'running') break; await new Promise((r) => setTimeout(r, 10)); }
+    assert.equal(st.task.state, 'error');
+    assert.match(st.task.error, /exit 1/);
+  } finally { await new Promise((r) => server.close(r)); }
+});

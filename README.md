@@ -69,11 +69,24 @@ scan history). First time on a machine: `npm run migrate`.
 - `npm run scan`: daily scan (`scripts/register-daily-scan.ps1` registers 7am). Jobs arrive
   as `new` or `backlog` and are closed when they leave their board.
 
-**M1 (dashboard)**, see `skills/dashboard/SKILL.md`: `.un-dashboard.ps1` →
+**M1 (dashboard)**, see `skills/dashboard/SKILL.md`: `.
+un-dashboard.ps1` →
 http://127.0.0.1:4188. Jobs tab (keyboard triage, pipeline, Applied with JD snapshot +
 follow-up + undo), Companies tab (paste-a-link intake with coverage %, add a company, tiers),
 health bar.
 
+**M2 (resume tailoring)**: open a job's **Resume & details** and click **Generate tailored
+resume** (optionally with a note). Claude (`claude -p` on your subscription, no tools) rewrites
+the bullets of the base resume (`config/resume.json` → `Resumes/_base/Pek_Liam_Resume.docx`)
+for that job. Only list bullets under Experience and Skills are touched, edited in place in a
+copy of the .docx so the layout is identical. The code then rejects any rewrite that adds a
+number your resume doesn't have, and warns on new tools/terms and on length. The panel shows JD
+keyword coverage before → after, a bullet-by-bullet diff and a page preview; **Accept** records
+it as the job's resume. Files go to `Resumes/`, which is **gitignored: this repo is public**.
+A PDF is also made when LibreOffice is installed.
+
 Retired in M1: the Claude web-search, Adzuna and LinkedIn sources, the title searcher, the
 static `dashboard.html`, relevance ranking, `data/jobs.json` and `Job_Applications.xlsx`
-(both migrated). The reviewer, customizer and ATS scanner skills still work until M2.
+(both migrated). Retired in M2: the Markdown customizer skill and the dashboard's keyword-report
+button (they tailored a sample Markdown resume, not yours). The reviewer and ATS scanner CLI
+skills still work.

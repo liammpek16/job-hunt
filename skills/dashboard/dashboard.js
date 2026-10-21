@@ -7,6 +7,8 @@
  *              chips; Applied button (date, JD snapshot, resume, follow-up) with undo.
  *   Companies  the watchlist (tier, ATS, open matches, 30-day openings), add a company,
  *              paste-a-link intake with coverage %.
+ *   Resume   per job: Generate (Claude rewrites bullets in a copy of the base .docx), check
+ *            results, keyword coverage before/after, bullet diff, preview, Accept.
  *   Health bar last scan, the daily task, coverage.
  *
  * Local only (127.0.0.1). The Admin-Brain HUD button launches it via run-dashboard.ps1.
@@ -23,16 +25,12 @@ const profileLib = require('../../lib/profile');
 const watchlist = require('../../lib/watchlist');
 const { runScan } = require('../../lib/scan');
 const { intake, addCompany, intakeStats } = require('../../lib/intake');
-const tailored = require('../../lib/tailored');
-const { tailorResume, formatTailorReport } = require('../../lib/tailor');
-const { writeResumePdf } = require('../../lib/pdf');
-const { scoreBullet } = require('../../lib/xyz');
+const tailor = require('../../lib/resume-tailor');
 const { renderApp } = require('../../lib/webapp');
 
 const DEFAULT_PORT = 4188;
 const REPO_ROOT = path.join(__dirname, '..', '..');
 const RESUMES_DIR = path.join(REPO_ROOT, 'Resumes');
-const DEFAULT_RESUME = process.env.JOB_HUNT_RESUME || path.join(REPO_ROOT, 'samples', 'sample-resume.md');
 const TASK_NAME = 'JobHunt Daily Scan';
 const STATUS_ORDER = Object.fromEntries(store.STATUSES.map((s, i) => [s, i]));
 
@@ -54,7 +52,7 @@ function linkedinSearch(job, chips) {
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(q)}`;
 }
 
-function shapeJob(job, profile, last, refined) {
+function shapeJob(job, profile, last, resumes) {
   const chips = profileLib.explain(job, profile);
   return {
     id: job.id, title: job.title, company: job.company, location: job.location, url: job.url,
@@ -64,7 +62,7 @@ function shapeJob(job, profile, last, refined) {
     lastUpdate: last[job.id] || job.updatedAt || job.firstSeen,
     salaryMin: job.salaryMin, salaryMax: job.salaryMax,
     chips, linkedin: linkedinSearch(job, chips),
-    tailored: tailored.isRefined(job.id, refined), pdf: tailored.hasPdf(job.id),
+    latestResume: resumes[job.id] || null,
   };
 }
 
@@ -81,15 +79,15 @@ SORTERS.backlog = SORTERS.new;
 function jobsPayload(db, profile, view = 'new') {
   if (!SORTERS[view]) { const e = new Error(`Unknown view "${view}".`); e.status = 400; throw e; }
   const last = lastActivity(db);
-  const refined = tailored.refinedIds();
+  const resumes = store.latestResumes(db);
   return store.allJobs(db).filter((j) => store.viewOf(j) === view)
-    .map((j) => shapeJob(j, profile, last, refined)).sort(SORTERS[view]);
+    .map((j) => shapeJob(j, profile, last, resumes)).sort(SORTERS[view]);
 }
 
 function jobDetail(db, profile, id) {
   const job = store.getJob(db, id);
   if (!job) { const e = new Error(`No job "${id}".`); e.status = 404; throw e; }
-  return { ...shapeJob(job, profile, lastActivity(db), tailored.refinedIds()),
+  return { ...shapeJob(job, profile, lastActivity(db), store.latestResumes(db)),
     description: job.description, jdSnapshot: job.jdSnapshot, events: store.events(db, { jobId: id, limit: 50 }) };
 }
 
@@ -162,40 +160,57 @@ async function healthPayload(db, getTask = scheduledTask) {
   };
 }
 
-/* ------------------------------ résumé refine ------------------------------- */
-
-/** Same per-bullet transform the customizer uses: replace weak bullets with their XYZ rewrite. */
-function improveBullet(text) {
-  const b = scoreBullet(text);
-  return b.score === 3 ? text : (b.rewrite || text);
-}
+/* --------------------------------- resumes ---------------------------------- */
 
 /**
- * Tailor the resume to one job's JD: a Markdown report and a tailored-resume PDF the row can
- * preview. (M2 replaces this with in-place .docx tailoring.) The original resume is untouched.
+ * Generation runs in the background (Claude takes 20–90 s); the page polls resumeState().
+ * tasks: jobId → { state: 'running'|'done'|'error', startedAt, error?, resumeId? }.
  */
-async function refineRole(db, id) {
-  const role = store.getJob(db, id);
-  if (!role) { const e = new Error(`No job "${id}".`); e.status = 404; throw e; }
-  let resumeText;
-  try { resumeText = fs.readFileSync(DEFAULT_RESUME, 'utf8'); }
-  catch { const e = new Error(`Resume not found at ${DEFAULT_RESUME} (set JOB_HUNT_RESUME).`); e.status = 500; throw e; }
-  const jdLabel = `${role.title}${role.company ? ' @ ' + role.company : ''}`;
-  const report = tailorResume(resumeText, `${role.title}\n${role.description || ''}`);
-  const summary = {
-    coverage: report.coverage.pct, present: report.coverage.present.length, total: report.coverage.total,
-    fullXYZ: report.xyz.fullXYZ, totalBullets: report.xyz.totalBullets, weak: report.weakBullets.length,
+function resumeTasks(db, opts = {}) {
+  const tasks = new Map();
+  const gen = opts.generate || ((jobId, o) => tailor.generate(db, jobId, o));
+  return {
+    start(jobId, note) {
+      if (!store.getJob(db, jobId)) { const e = new Error(`No job "${jobId}".`); e.status = 404; throw e; }
+      const t = tasks.get(jobId);
+      if (t && t.state === 'running') return t;
+      const task = { state: 'running', startedAt: new Date().toISOString() };
+      tasks.set(jobId, task);
+      task.promise = Promise.resolve().then(() => gen(jobId, { note: note || undefined }))
+        .then((r) => { Object.assign(task, { state: 'done', resumeId: r.id }); })
+        .catch((e) => { Object.assign(task, { state: 'error', error: e.message }); });
+      return task;
+    },
+    get: (jobId) => tasks.get(jobId) || null,
   };
-  tailored.save(id, formatTailorReport(report, jdLabel), summary);
-  const missing = report.coverage.missing.map((k) => k.term).slice(0, 15).join(', ');
-  const note = `Tailored for ${jdLabel}. Weave these missing JD keywords in where truthful: `
-    + `${missing || '(none — good coverage)'}. Weak bullets carry XYZ rewrite scaffolds — `
-    + 'fill the [bracketed] placeholders. Original resume unchanged; review before sending.';
-  let pdf = false;
-  try { await writeResumePdf(resumeText, improveBullet, tailored.pdfPath(id), note); pdf = true; }
-  catch (e) { console.error(`PDF generation failed for ${id}: ${e.message}`); }
-  return { id, ...summary, pdf };
 }
+
+function resumeState(db, tasks, jobId) {
+  const t = tasks.get(jobId);
+  return {
+    task: t ? { state: t.state, startedAt: t.startedAt, error: t.error || null, resumeId: t.resumeId || null } : null,
+    resumes: store.resumesForJob(db, jobId),
+    pdfAvailable: Boolean(tailor.findSoffice()),
+  };
+}
+
+/** Resolve a resume record's file safely (must live under the repo root). */
+function resumeFile(db, rid, type) {
+  const r = store.getResume(db, Number(rid));
+  if (!r) { const e = new Error('No such resume.'); e.status = 404; throw e; }
+  const relPath = type === 'pdf' ? r.pdfPath : r.path;
+  if (!relPath) { const e = new Error(`No ${type} for this resume.`); e.status = 404; throw e; }
+  const file = path.resolve(REPO_ROOT, relPath);
+  if (!file.startsWith(REPO_ROOT + path.sep) || !fs.existsSync(file)) { const e = new Error('Resume file is missing.'); e.status = 404; throw e; }
+  return { r, file };
+}
+
+// Browser builds for the .docx preview, served from node_modules (no CDN).
+const NODE_MODULES = path.join(REPO_ROOT, 'node_modules');
+const VENDOR = {
+  '/vendor/jszip.min.js': path.join(NODE_MODULES, 'jszip', 'dist', 'jszip.min.js'),
+  '/vendor/docx-preview.min.js': path.join(NODE_MODULES, 'docx-preview', 'dist', 'docx-preview.min.js'),
+};
 
 /* --------------------------------- server ----------------------------------- */
 
@@ -223,6 +238,7 @@ function createServer(opts = {}) {
   const db = opts.db || store.open();
   const profile = () => opts.profile || profileLib.load();
   const scanDeps = opts.scanDeps || {};
+  const tasks = resumeTasks(db, opts.resumeDeps);
   let scanning = null;
 
   return http.createServer(async (req, res) => {
@@ -275,20 +291,36 @@ function createServer(opts = {}) {
         if (!scanning) scanning = runScan({ profile: profile(), db, ...scanDeps }).finally(() => { scanning = null; });
         sendJson(res, 200, await scanning); return;
       }
-      if (POST && p === '/api/tailor') {
+      if (POST && p === '/api/resume/generate') {
         const b = await readBody(req);
-        sendJson(res, 200, await refineRole(db, String(b.id || ''))); return;
+        tasks.start(String(b.id || ''), b.note);
+        sendJson(res, 202, resumeState(db, tasks, String(b.id || ''))); return;
       }
-      if (GET && p === '/api/tailored') {
-        const rec = tailored.load(url.searchParams.get('id') || '');
-        if (!rec) { sendJson(res, 404, { error: 'No tailored résumé for that job yet.' }); return; }
-        sendJson(res, 200, { markdown: rec.markdown, meta: rec.meta }); return;
+      if (GET && p === '/api/resume') { sendJson(res, 200, resumeState(db, tasks, url.searchParams.get('id') || '')); return; }
+      if (POST && p === '/api/resume/accept') {
+        const b = await readBody(req);
+        sendJson(res, 200, { resume: tailor.accept(db, Number(b.rid)) }); return;
       }
-      if (GET && p === '/api/tailored/pdf') {
-        const id = url.searchParams.get('id') || '';
-        if (!id || !tailored.hasPdf(id)) { sendJson(res, 404, { error: 'No tailored résumé PDF for that job yet.' }); return; }
-        res.writeHead(200, { 'Content-Type': 'application/pdf', 'Content-Disposition': 'inline; filename="tailored-resume.pdf"' });
-        fs.createReadStream(tailored.pdfPath(id)).pipe(res);
+      if (POST && p === '/api/resume/open') {
+        const b = await readBody(req);
+        const { file } = resumeFile(db, b.rid, 'docx');
+        if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '""', file], { windowsHide: true });
+        sendJson(res, 200, { opened: path.relative(REPO_ROOT, file) }); return;
+      }
+      if (GET && p === '/api/resume/file') {
+        const type = url.searchParams.get('type') === 'pdf' ? 'pdf' : 'docx';
+        const { file } = resumeFile(db, url.searchParams.get('rid'), type);
+        const disp = url.searchParams.get('download') ? 'attachment' : 'inline';
+        res.writeHead(200, {
+          'Content-Type': type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'Content-Disposition': `${disp}; filename="${path.basename(file)}"`,
+        });
+        fs.createReadStream(file).pipe(res);
+        return;
+      }
+      if (GET && VENDOR[p]) {
+        res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'max-age=86400' });
+        fs.createReadStream(VENDOR[p]).pipe(res);
         return;
       }
       sendJson(res, 404, { error: 'Not found' });
@@ -308,5 +340,5 @@ if (require.main === module) serve(parseArgs(process.argv.slice(2)).port);
 
 module.exports = {
   parseArgs, createServer, serve, DEFAULT_PORT, jobsPayload, jobDetail, companiesPayload,
-  healthPayload, listResumes, refineRole, PIPELINE_MOVES,
+  healthPayload, listResumes, resumeTasks, PIPELINE_MOVES,
 };

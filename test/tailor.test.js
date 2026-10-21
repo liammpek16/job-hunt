@@ -74,20 +74,3 @@ test('tokenize keeps tech tokens like c++ and node.js intact-ish', () => {
   assert.ok(toks.includes('node.js'));
   assert.ok(toks.includes('ci') && toks.includes('cd'));
 });
-
-// ---- customizer --docx (goal 3 addition) ----
-test('customizer generates a tailored .docx (valid, new file)', async () => {
-  const fs = require('fs'); const os = require('os'); const path = require('path');
-  const { writeResumeDocx } = require('../lib/docx');
-  const { improveBullet } = require('../skills/customizer/customizer');
-  const resume = 'Jane\n\nExperience\n- Responsible for the backend\n- Reduced cost by 20% by refactoring';
-  const out = path.join(os.tmpdir(), `jh-cust-${Date.now()}.docx`);
-  await writeResumeDocx(resume, improveBullet, out, 'Tailored for X');
-  const buf = fs.readFileSync(out);
-  assert.strictEqual(buf.slice(0, 2).toString('latin1'), 'PK');
-  assert.ok(buf.length > 1000);
-  // weak bullet rewritten, strong bullet kept
-  assert.match(improveBullet('Responsible for the backend'), /\[/);
-  assert.strictEqual(improveBullet('Reduced cost by 20% by refactoring'), 'Reduced cost by 20% by refactoring');
-  fs.unlinkSync(out);
-});

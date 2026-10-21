@@ -115,3 +115,9 @@ test('fetchRoles falls back to the bundled seed boards when none are passed', as
   assert.strictEqual(res.roles.length, 0);
   assert.strictEqual(res.errors.length, res.boards, 'each seed board recorded as a fetch error');
 });
+
+test('entity-encoded JD HTML (as Greenhouse sends it) becomes clean text', () => {
+  const { stripHtml } = require('../lib/sources/board-common');
+  const enc = '&lt;div class=&quot;content&quot;&gt;&lt;p&gt;&lt;span style=&quot;font-size: 10pt&quot;&gt;Run demos &amp;amp; POCs&lt;/span&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;2+ years&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;';
+  assert.strictEqual(stripHtml(enc), 'Run demos & POCs\n2+ years');
+});
