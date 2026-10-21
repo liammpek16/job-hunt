@@ -1,0 +1,9 @@
+{
+  "_comment": "Resume tailoring (M2). `base` is the one canonical resume every tailored copy starts from; only list bullets under `editableSections` are rewritten, so headings, employers, dates, education and contact details never change. Tailored copies are saved to `outputDir` (gitignored: this repo is public).",
+  "base": "Resumes/_base/Pek_Liam_Resume.docx",
+  "outputDir": "Resumes",
+  "fileName": "Pek_Liam_Resume_{company}_{title}",
+  "editableSections": ["Experience", "Skills & Abilities"],
+  "maxBulletGrowth": 1.25,
+  "maxTotalGrowth": 1.05
+}
