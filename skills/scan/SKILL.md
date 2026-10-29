@@ -1,6 +1,6 @@
 ---
 name: watchlist-scan
-description: Daily scan of a tiered company watchlist on official ATS job boards (Greenhouse, Ashby, Lever, SmartRecruiters, Workable), filtered by the search profile, saved to the shared store as new or backlog roles. No LinkedIn, no keys, no browser.
+description: Daily scan of a tiered company watchlist on official ATS job boards (Greenhouse, Ashby, Lever, SmartRecruiters, Workable, Workday), filtered by the search profile (NYC metro + US-remote), saved as new or backlog roles; weekly web-search discovery of new companies. No LinkedIn, no keys, no browser.
 ---
 
 # Watchlist scan (M0 of the v4 plan)
@@ -23,7 +23,9 @@ npm run detect                    # find the ATS board for companies not yet che
 npm run detect -- --force         # re-check every company (e.g. monthly)
 npm run detect -- --only "Rescale"
 npm run detect -- --workable        # also try Workable for misses (slow, opt-in)
-npm run scan                      # scan every covered board and save
+npm run scan                      # scan every covered board and save (+ weekly discovery)
+npm run scan -- --no-discover     # scan only
+npm run discover                  # find new companies now (web search via Claude Code)
 npm run scan -- --dry-run         # scan and print only
 ```
 Register the 7am daily run (per-user Windows scheduled task, `-Remove` to undo):
@@ -46,6 +48,24 @@ The dashboard (`run-dashboard.ps1`) also has a **Scan watchlist now** button and
 
 Roles from the pre-revamp sources (Claude web search, old board searches, Jobgether) were moved
 out of the store into `data/jobs-archive.json` before the M1 move to SQLite.
+
+## Workday
+Big employers (Salesforce, Adobe, Autodesk, PTC, Cisco, NVIDIA, …) post on Workday career
+sites. Each has a public JSON API that searches server-side, so the scan asks it for each
+profile title (2 result pages per title, 4 sites at a time) and fetches details only for
+titles that pass. A site is identified by `<tenant>.wdN/<site>` from its URL; add one by
+pasting any of its posting links on the Companies tab. Detection by name doesn't find Workday.
+
+## Discovery (weekly, or `npm run discover` / the Companies-tab button)
+Claude Code (`claude -p`, only the WebSearch tool, your subscription) searches for current
+postings with your titles in your locations on the ATS hosts above. Claude only nominates
+companies: each link is parsed for its board, and the company is added (tier C, origin
+`discovery`) only if that board, read through its own API, has a job passing your profile
+right now. Their fresh roles go to New. First run (2026-10-29): 43 postings → 24 companies.
+
+## Profile changes
+Jobs still in New/Backlog that no longer fit the profile's titles or locations are dismissed
+by the next scan (cause "profile", undoable from Closed). Applied jobs are never touched.
 
 ## Detection rules
 A board counts only if it has ≥ 1 open job. Boards that report a company name

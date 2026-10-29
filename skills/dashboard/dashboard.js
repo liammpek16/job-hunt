@@ -26,6 +26,7 @@ const watchlist = require('../../lib/watchlist');
 const { runScan } = require('../../lib/scan');
 const { intake, addCompany, intakeStats } = require('../../lib/intake');
 const tailor = require('../../lib/resume-tailor');
+const { discoverAndScan } = require('../scan/discover');
 const { renderApp } = require('../../lib/webapp');
 
 const DEFAULT_PORT = 4188;
@@ -69,8 +70,9 @@ function shapeJob(job, profile, last, resumes) {
 const TIER = watchlist.TIER_RANK;
 const time = (s) => (s ? Date.parse(s) || 0 : 0);
 const SORTERS = {
-  // triage: best tier first, then newest posting
-  new: (a, b) => (TIER[a.tier] ?? 3) - (TIER[b.tier] ?? 3) || time(b.posted || b.firstSeen) - time(a.posted || a.firstSeen),
+  // triage: in-place (NYC) before US-remote, then best tier, then newest posting
+  new: (a, b) => (a.chips.locationRank - b.chips.locationRank)
+    || (TIER[a.tier] ?? 3) - (TIER[b.tier] ?? 3) || time(b.posted || b.firstSeen) - time(a.posted || a.firstSeen),
   pipeline: (a, b) => STATUS_ORDER[b.status] - STATUS_ORDER[a.status] || time(b.lastUpdate) - time(a.lastUpdate),
   closed: (a, b) => time(b.lastUpdate) - time(a.lastUpdate),
 };
@@ -240,6 +242,7 @@ function createServer(opts = {}) {
   const scanDeps = opts.scanDeps || {};
   const tasks = resumeTasks(db, opts.resumeDeps);
   let scanning = null;
+  let discovery = null; // { state, startedAt, result?, error? }
 
   return http.createServer(async (req, res) => {
     try {
@@ -291,6 +294,17 @@ function createServer(opts = {}) {
         if (!scanning) scanning = runScan({ profile: profile(), db, ...scanDeps }).finally(() => { scanning = null; });
         sendJson(res, 200, await scanning); return;
       }
+      if (POST && p === '/api/discover') {
+        if (!discovery || discovery.state !== 'running') {
+          discovery = { state: 'running', startedAt: new Date().toISOString() };
+          const d = discovery;
+          (opts.discover || ((pr) => discoverAndScan(db, pr, { cause: 'button', deps: scanDeps })))(profile())
+            .then((r) => { d.state = 'done'; d.result = { added: r.added, candidates: r.candidates, boards: r.boards, newJobs: r.scan ? r.scan.added.new : 0, skipped: r.skipped.length }; })
+            .catch((e) => { d.state = 'error'; d.error = e.message; });
+        }
+        sendJson(res, 202, { task: discovery, last: store.getMeta(db, 'lastDiscovery') }); return;
+      }
+      if (GET && p === '/api/discover') { sendJson(res, 200, { task: discovery, last: store.getMeta(db, 'lastDiscovery') }); return; }
       if (POST && p === '/api/resume/generate') {
         const b = await readBody(req);
         tasks.start(String(b.id || ''), b.note);

@@ -85,6 +85,12 @@ keyword coverage before → after, a bullet-by-bullet diff and a page preview; *
 it as the job's resume. Files go to `Resumes/`, which is **gitignored: this repo is public**.
 A PDF is also made when LibreOffice is installed.
 
+**Search focus (2026-10-29)**: NYC metro + US-remote only (Massachusetts dropped), NYC ranked
+first; "forward deployed" added to the titles. Sources: Greenhouse, Ashby, Lever,
+SmartRecruiters, Workable and **Workday** (22 large employers seeded; add more by pasting a
+myworkdayjobs.com link), plus weekly **discovery** (`npm run discover`): Claude web-searches
+for matching postings and adds companies whose own board has a match.
+
 Retired in M1: the Claude web-search, Adzuna and LinkedIn sources, the title searcher, the
 static `dashboard.html`, relevance ranking, `data/jobs.json` and `Job_Applications.xlsx`
 (both migrated). Retired in M2: the Markdown customizer skill and the dashboard's keyword-report
