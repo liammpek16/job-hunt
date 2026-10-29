@@ -35,10 +35,10 @@ test('titles outside the profile are dropped', () => {
 });
 
 test('location: whole place phrase or state code, not partial words', () => {
-  for (const l of ['Boston, MA', 'New York, NY', 'NYC', 'Cambridge, MA', 'Brooklyn, NY', 'New York City; San Francisco', 'Boston, Massachusetts, United States']) {
+  for (const l of ['New York, NY', 'NYC', 'Brooklyn, NY', 'New York City; San Francisco', 'Jersey City, NJ', 'New York - New York City Metro - Remote']) {
     assert.ok(profile.locationCheck(l, P).ok, l);
   }
-  for (const l of ['Newark, NJ', 'New Zealand', 'Newcastle, UK', 'San Francisco, CA', 'Manchester, UK', 'Austin, TX']) {
+  for (const l of ['Boston, MA', 'Cambridge, MA', 'Newark, NJ', 'New Zealand', 'Newcastle, UK', 'San Francisco, CA', 'Manchester, UK', 'Austin, TX']) {
     assert.equal(profile.locationCheck(l, P).ok, false, l);
   }
 });
@@ -70,9 +70,16 @@ test('yearsRequired reads the smallest stated minimum', () => {
 });
 
 test('evaluate combines title, location and years with a reason', () => {
-  const role = { title: 'Sales Engineer', location: 'Boston, MA', description: '2+ years of experience' };
+  const role = { title: 'Sales Engineer', location: 'New York, NY', description: '2+ years of experience' };
   assert.deepEqual(profile.evaluate(role, P), { ok: true });
   assert.match(profile.evaluate({ ...role, description: '6+ years of experience required' }, P).reason, /6\+ years/);
   assert.match(profile.evaluate({ ...role, location: 'Denver, CO' }, P).reason, /location/);
   assert.match(profile.evaluate({ ...role, title: 'Senior Sales Engineer' }, P).reason, /senior/);
+});
+
+test('explain ranks NYC above US-remote and reports the match', () => {
+  assert.equal(profile.explain({ title: 'Forward Deployed Engineer', location: 'Brooklyn, NY' }, P).locationRank, 0);
+  assert.equal(profile.explain({ title: 'Sales Engineer', location: 'Remote - US' }, P).locationRank, 1);
+  assert.equal(profile.explain({ title: 'Sales Engineer', location: 'Boston, MA' }, P).locationRank, 2);
+  assert.equal(profile.titleCheck('Forward-Deployed Solutions Engineer', P).ok, true);
 });

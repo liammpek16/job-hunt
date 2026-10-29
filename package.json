@@ -2,7 +2,7 @@
   "name": "job-hunt",
   "version": "0.1.0",
   "private": true,
-  "description": "Job Hunt — watchlist scan of company ATS boards, triage dashboard, resume tailoring, application tracking.",
+  "description": "Job Hunt \u2014 watchlist scan of company ATS boards, triage dashboard, resume tailoring, application tracking.",
   "type": "commonjs",
   "scripts": {
     "review": "node skills/reviewer/reviewer.js",
@@ -12,7 +12,8 @@
     "test": "node --test",
     "scan": "node skills/scan/scan.js",
     "detect": "node skills/scan/detect.js",
-    "migrate": "node scripts/migrate-to-sqlite.js"
+    "migrate": "node scripts/migrate-to-sqlite.js",
+    "discover": "node skills/scan/discover.js"
   },
   "license": "UNLICENSED",
   "dependencies": {

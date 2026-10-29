@@ -106,7 +106,7 @@ test('watchlist helpers: blocklist, grouping, coverage', () => {
   assert.deepEqual(by.greenhouse.map((b) => b.token), ['acme', 'beta']);
   assert.deepEqual(watchlist.coverage(wl), {
     companies: 3, covered: 2, notCovered: 1, unchecked: 0,
-    byAts: { greenhouse: 2, ashby: 0, lever: 0, workable: 0, smartrecruiters: 0 },
+    byAts: { greenhouse: 2, ashby: 0, lever: 0, workable: 0, smartrecruiters: 0, workday: 0 },
   });
 });
 
@@ -144,4 +144,18 @@ test('a board that suddenly returns nothing closes nothing (treated as a glitch)
   const sum = await runScan({ profile, db, now: NOW, httpGetJson: http });
   assert.equal(sum.closed, 0);
   assert.ok(sum.errors.some((e) => e.token === 'acme' && /no postings/.test(e.error)));
+});
+
+test('jobs in triage that no longer fit the profile are dismissed (undoable); applied ones are kept', async () => {
+  const http = async () => gh([[1, 'Sales Engineer', 'Boston, MA', ago(1)], [2, 'Sales Engineer', 'Remote - US', ago(1)]]);
+  const db = newDb();
+  await runScan({ profile, db, now: NOW, httpGetJson: http });
+  store.setStatus(db, jid(2), 'applied', { now: NOW });
+  const nyc = { ...profile, locations: [{ query: 'New York', states: ['NY'] }], allowRemote: false };
+  const sum = await runScan({ profile: nyc, db, now: later(1), httpGetJson: http });
+  assert.equal(sum.dismissed, 1);
+  assert.equal(store.getJob(db, jid(1)).status, 'dismissed');
+  assert.equal(store.getJob(db, jid(2)).status, 'applied');
+  assert.equal(store.events(db, { jobId: jid(1), kind: 'status' })[0].cause, 'profile');
+  assert.equal(store.undo(db, jid(1)).status, 'backlog');
 });

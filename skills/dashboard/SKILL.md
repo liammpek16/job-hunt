@@ -10,7 +10,8 @@ description: The Job Hunt webapp over data/jobhunt.db — triage new jobs from t
 ```
 
 ## Jobs tab
-- **New / Backlog**: jobs from the daily scan, ranked by tier then newest. Each row shows why
+- **New / Backlog**: jobs from the daily scan, ranked NYC first, then US-remote, then tier,
+  then newest. Each row shows why
   it's there (title phrase, place, age, years asked, salary). Keys: `j`/`k` move, `i`
   interested, `d` dismiss, `o` open the posting, `u` undo, `Enter` details.
 - **Pipeline**: interested → applied → screening → interview → offer. **Applied…** records
@@ -40,7 +41,11 @@ description: The Job Hunt webapp over data/jobhunt.db — triage new jobs from t
   never opened. Its company and job id are read from the URL text, the company joins the
   watchlist (board from the URL or auto-detected), and its board is scanned. The share of
   pasted postings the dashboard already had is your **coverage %**.
-- **Add a company** by name; its ATS board is detected and scanned.
+- **Discover companies**: web search (Claude) for current postings with your titles in NYC /
+  US-remote; companies whose own board has a matching job are added (tier C) and scanned.
+  Also runs weekly with the 7am scan.
+- **Add a company** by name; its ATS board is detected and scanned. Workday companies: paste
+  one of their myworkdayjobs.com posting links instead.
 - **Watchlist**: tier (editable), board, open matches, new in 30 days, last scanned.
 
 ## Health bar

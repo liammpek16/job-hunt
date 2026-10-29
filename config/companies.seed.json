@@ -912,8 +912,9 @@
     {
       "name": "Arctic Wolf",
       "tier": "B",
-      "ats": "none",
-      "checkedAt": "2026-10-19"
+      "ats": "workday",
+      "checkedAt": "2026-10-19",
+      "slug": "arcticwolf.wd1/External"
     },
     {
       "name": "Rapid7",
@@ -1627,6 +1628,132 @@
       "tier": "C",
       "ats": "none",
       "checkedAt": "2026-10-19"
+    },
+    {
+      "name": "Adobe",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "adobe.wd5/external_experienced"
+    },
+    {
+      "name": "Autodesk",
+      "tier": "A",
+      "ats": "workday",
+      "slug": "autodesk.wd1/Ext"
+    },
+    {
+      "name": "Broadcom",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "broadcom.wd1/External_Career"
+    },
+    {
+      "name": "Cadence",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "cadence.wd1/External_Careers"
+    },
+    {
+      "name": "Capital One",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "capitalone.wd12/Capital_One"
+    },
+    {
+      "name": "Cisco",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "cisco.wd5/Cisco_Careers"
+    },
+    {
+      "name": "CrowdStrike",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "crowdstrike.wd5/crowdstrikecareers"
+    },
+    {
+      "name": "Equinix",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "equinix.wd1/External"
+    },
+    {
+      "name": "Gartner",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "gartner.wd5/EXT"
+    },
+    {
+      "name": "HPE",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "hpe.wd5/Jobsathpe"
+    },
+    {
+      "name": "Intel",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "intel.wd1/External"
+    },
+    {
+      "name": "Mastercard",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "mastercard.wd1/CorporateCareers"
+    },
+    {
+      "name": "NVIDIA",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "nvidia.wd5/NVIDIAExternalCareerSite"
+    },
+    {
+      "name": "Nasdaq",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "nasdaq.wd1/Global_External_Site"
+    },
+    {
+      "name": "PTC",
+      "tier": "A",
+      "ats": "workday",
+      "slug": "ptc.wd1/PTC"
+    },
+    {
+      "name": "S&P Global",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "spgi.wd5/SPGI_Careers"
+    },
+    {
+      "name": "Salesforce",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "salesforce.wd12/External_Career_Site"
+    },
+    {
+      "name": "Thomson Reuters",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "thomsonreuters.wd5/External_Career_Site"
+    },
+    {
+      "name": "Workday",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "workday.wd5/Workday"
+    },
+    {
+      "name": "Zendesk",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "zendesk.wd1/zendesk"
+    },
+    {
+      "name": "Zoom",
+      "tier": "B",
+      "ats": "workday",
+      "slug": "zoom.wd5/Zoom"
     }
   ]
 }
