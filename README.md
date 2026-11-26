@@ -56,8 +56,7 @@ Each build target is a discrete skill (or, for the last two, a tracked outcome).
 ## Status
 
 **Revamp in progress** on the approved v4 plan (`docs/plan-v4-council.md`, on the
-`docs/revamp-plan` branch): jobs come only from employers' own ATS boards, no LinkedIn
-scraping, and a tiered company watchlist is the search.
+`docs/revamp-plan` branch): jobs come from employers' own ATS boards (plus, since 2026-11-26, a LinkedIn search), and a tiered company watchlist is the search.
 
 Everything lives in one SQLite file, `data/jobhunt.db` (jobs, companies, status events,
 scan history). First time on a machine: `npm run migrate`.
@@ -91,7 +90,17 @@ SmartRecruiters, Workable and **Workday** (22 large employers seeded; add more b
 myworkdayjobs.com link), plus weekly **discovery** (`npm run discover`): Claude web-searches
 for matching postings and adds companies whose own board has a match.
 
-Retired in M1: the Claude web-search, Adzuna and LinkedIn sources, the title searcher, the
+**LinkedIn (2026-11-26)**: the daily scan also searches LinkedIn's public, logged-out job
+pages (no account, key or browser): every profile title in the NYC metro and US-remote, last 7
+days, then opens each matching posting for its full JD. Same filters as board jobs (title,
+location, blocklist, years required) plus LinkedIn's employment type, seniority, staffing
+agencies and "no longer accepting applications". A role a watched company's own board already
+has is skipped. Settings: `linkedin` in `config/search-profile.json`. Run it alone with
+`node skills/scan/scan.js --linkedin-only`, skip it with `--no-linkedin`, or click **Search
+LinkedIn** in the dashboard. Requests are spaced ~1.2 s apart and a rate limit (HTTP 429) ends
+the run early; automated access is against LinkedIn's terms, so keep it personal-scale.
+
+Retired in M1: the Claude web-search, Adzuna and (key-based) LinkedIn sources, the title searcher, the
 static `dashboard.html`, relevance ranking, `data/jobs.json` and `Job_Applications.xlsx`
 (both migrated). Retired in M2: the Markdown customizer skill and the dashboard's keyword-report
 button (they tailored a sample Markdown resume, not yours). The reviewer and ATS scanner CLI

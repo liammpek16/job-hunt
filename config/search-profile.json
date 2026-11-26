@@ -65,5 +65,20 @@
   "allowRemote": true,
   "country": "us",
   "maxYearsRequired": 4,
-  "maxAgeDays": 7
+  "maxAgeDays": 7,
+  "linkedin": {
+    "_comment": "LinkedIn search (public logged-out job pages, no account or browser). One search per title in each location, plus a US-remote search per title when remote is true. sinceDays: only postings from the last N days. pagesPerQuery: 10 results per page. maxDetails: how many job pages to open per run for the full JD (years check). delayMs: pause between requests, keep it >= 1000 so LinkedIn does not rate-limit you. staleDays: an untriaged LinkedIn job not seen in this many days is closed.",
+    "enabled": true,
+    "locations": [
+      "New York City Metropolitan Area"
+    ],
+    "remote": true,
+    "remoteLocation": "United States",
+    "sinceDays": 7,
+    "pagesPerQuery": 3,
+    "maxDetails": 150,
+    "delayMs": 1200,
+    "excludeStaffingAgencies": true,
+    "staleDays": 21
+  }
 }
