@@ -24,6 +24,7 @@ const store = require('../../lib/db');
 const profileLib = require('../../lib/profile');
 const watchlist = require('../../lib/watchlist');
 const { runScan } = require('../../lib/scan');
+const { runLinkedInScan } = require('../../lib/linkedin-scan');
 const { intake, addCompany, intakeStats } = require('../../lib/intake');
 const tailor = require('../../lib/resume-tailor');
 const { discoverAndScan } = require('../scan/discover');
@@ -147,6 +148,8 @@ function scheduledTask() {
   });
 }
 
+function lastOf(list) { return list.length ? list[list.length - 1] : null; }
+
 async function healthPayload(db, getTask = scheduledTask) {
   const scans = store.getMeta(db, 'scans', []);
   const last = scans[scans.length - 1] || null;
@@ -154,6 +157,7 @@ async function healthPayload(db, getTask = scheduledTask) {
   const lastFull = fullScans[fullScans.length - 1] || null;
   return {
     lastScan: last, lastFullScan: lastFull,
+    lastLinkedIn: lastOf(store.getMeta(db, 'linkedinScans', [])),
     scanAgeHours: lastFull ? Math.round((Date.now() - time(lastFull.at)) / 36e5) : null,
     task: await getTask(),
     coverage: watchlist.coverage(store.loadWatchlist(db)),
@@ -243,6 +247,7 @@ function createServer(opts = {}) {
   const tasks = resumeTasks(db, opts.resumeDeps);
   let scanning = null;
   let discovery = null; // { state, startedAt, result?, error? }
+  let linkedinTask = null; // { state, startedAt, result?, error? }
 
   return http.createServer(async (req, res) => {
     try {
@@ -304,6 +309,17 @@ function createServer(opts = {}) {
         }
         sendJson(res, 202, { task: discovery, last: store.getMeta(db, 'lastDiscovery') }); return;
       }
+      if (POST && p === '/api/linkedin') {
+        if (!linkedinTask || linkedinTask.state !== 'running') {
+          linkedinTask = { state: 'running', startedAt: new Date().toISOString() };
+          const t = linkedinTask;
+          (opts.linkedinScan || ((pr) => runLinkedInScan({ profile: pr, db, ...(opts.linkedinDeps || {}) })))(profile())
+            .then((r) => { t.state = 'done'; t.result = r; })
+            .catch((e) => { t.state = 'error'; t.error = e.message; });
+        }
+        sendJson(res, 202, { task: linkedinTask, last: lastOf(store.getMeta(db, 'linkedinScans', [])) }); return;
+      }
+      if (GET && p === '/api/linkedin') { sendJson(res, 200, { task: linkedinTask, last: lastOf(store.getMeta(db, 'linkedinScans', [])) }); return; }
       if (GET && p === '/api/discover') { sendJson(res, 200, { task: discovery, last: store.getMeta(db, 'lastDiscovery') }); return; }
       if (POST && p === '/api/resume/generate') {
         const b = await readBody(req);
